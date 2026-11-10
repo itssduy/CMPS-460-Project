@@ -8,6 +8,7 @@ app = Flask(__name__)
 def get_db():
     connection = sqlite3.connect("games.db")
     connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
 @app.route("/")
@@ -138,3 +139,89 @@ def create_user():
         connection.close()
 
     return jsonify(dict(user)), 201
+
+
+@app.get("/users")
+def list_users():
+    connection = get_db()
+    try:
+        users = connection.execute("SELECT * FROM users ORDER BY user_id").fetchall()
+    finally:
+        connection.close()
+
+    return jsonify([dict(user) for user in users])
+
+
+@app.get("/users/<int:user_id>")
+def get_user(user_id):
+    connection = get_db()
+    try:
+        user = connection.execute(
+            "SELECT * FROM users WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    finally:
+        connection.close()
+
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify(dict(user))
+
+
+@app.patch("/users/<int:user_id>")
+def update_user(user_id):
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    fields = [field for field in USER_FIELDS if field in data]
+    if not fields:
+        return jsonify({
+            "error": "Provide at least one field to update",
+            "fields": USER_FIELDS,
+        }), 400
+
+    error = validate_user_fields(data, fields)
+    if error:
+        return jsonify({"error": error}), 400
+
+    assignments = ", ".join(f"{field} = ?" for field in fields)
+    values = [data[field].strip() for field in fields]
+
+    connection = get_db()
+    try:
+        cursor = connection.execute(
+            f"UPDATE users SET {assignments} WHERE user_id = ?",
+            (*values, user_id),
+        )
+        connection.commit()
+        user = connection.execute(
+            "SELECT * FROM users WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    except sqlite3.IntegrityError as e:
+        return unique_field_error(e)
+    finally:
+        connection.close()
+
+    if cursor.rowcount == 0:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify(dict(user))
+
+
+@app.delete("/users/<int:user_id>")
+def delete_user(user_id):
+    connection = get_db()
+    try:
+        cursor = connection.execute(
+            "DELETE FROM users WHERE user_id = ?", (user_id,)
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    if cursor.rowcount == 0:
+        return jsonify({"error": "User not found"}), 404
+
+    return "", 204
