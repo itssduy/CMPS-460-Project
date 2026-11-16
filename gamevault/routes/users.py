@@ -1,7 +1,7 @@
 import sqlite3
 
 from flask import Blueprint, jsonify, request
-from database import get_db
+from gamevault.db import get_db
 
 users_bp = Blueprint("users", __name__)
 

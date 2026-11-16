@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from database import get_db
+from gamevault.db import get_db
 
 library_bp = Blueprint("library", __name__)
 
