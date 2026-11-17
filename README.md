@@ -1,3 +1,25 @@
-# CMPS-460-Project
+# GameVault
 
-uv run flask --app app run
+A video game storefront database for CMPS 460.
+
+## Setup
+
+```
+uv sync
+uv run flask --app gamevault init-db
+uv run flask --app gamevault run
+```
+
+`init-db` creates `games.db` from `sql/schema.sql` and `sql/seed.sql`. Run it again any time to reset the data.
+
+## Layout
+
+```
+gamevault/
+  __init__.py   app setup
+  db.py         database connection and init-db command
+  routes/       API endpoints (games, users, library)
+sql/
+  schema.sql
+  seed.sql
+```
