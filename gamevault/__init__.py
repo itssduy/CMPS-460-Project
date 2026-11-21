@@ -3,6 +3,7 @@ from flask import Flask
 from gamevault.db import init_db
 from gamevault.routes.games import games_bp
 from gamevault.routes.library import library_bp
+from gamevault.routes.recommendations import recommendations_bp
 from gamevault.routes.tags import tags_bp
 from gamevault.routes.users import users_bp
 
@@ -13,6 +14,7 @@ def create_app():
     app.register_blueprint(users_bp)
     app.register_blueprint(library_bp)
     app.register_blueprint(tags_bp)
+    app.register_blueprint(recommendations_bp)
     app.cli.add_command(init_db)
 
     @app.route("/")
