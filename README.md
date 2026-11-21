@@ -18,7 +18,9 @@ uv run flask --app gamevault run
 gamevault/
   __init__.py   app setup
   db.py         database connection and init-db command
-  routes/       API endpoints (games, users, library)
+  routes/       API endpoints under /api, plus pages.py for the site pages
+  templates/    Jinja templates (base.html is the shared layout)
+  static/       CSS
 sql/
   schema.sql
   seed.sql
