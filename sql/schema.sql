@@ -12,7 +12,8 @@ CREATE TABLE games (
     developer    TEXT    NOT NULL,
     publisher    TEXT    NOT NULL,
     release_date TEXT    NOT NULL,
-    price        REAL    NOT NULL CHECK (price >= 0)
+    price        REAL    NOT NULL CHECK (price >= 0),
+    image_url    TEXT
 );
 
 CREATE TABLE users (

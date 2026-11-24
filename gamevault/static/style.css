@@ -5,3 +5,27 @@
 .game-card:hover {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
 }
+
+.game-thumb {
+  width: 92px;
+  aspect-ratio: 460 / 215;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.game-cover {
+  width: 100%;
+  aspect-ratio: 460 / 215;
+  object-fit: cover;
+}
+
+.game-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+  font-size: 1.5rem;
+  font-weight: 700;
+}

@@ -25,6 +25,32 @@ INSERT INTO games (game_id, title, developer, publisher, release_date, price) VA
     (24, 'Vampire Survivors',                'poncle',                 'poncle',                          '2022-10-20', 4.99),
     (25, 'R.E.P.O.',                         'semiwork',               'semiwork',                        '2025-02-26', 9.99);
 
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/367520/3c3489495136b26b34f8a9543c7f5645b99d388c/header.jpg?t=1776125684' WHERE game_id = 1;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/header.jpg?t=1786554168' WHERE game_id = 2;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145360/header.jpg?t=1758127023' WHERE game_id = 3;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1966720/header.jpg?t=1775380053' WHERE game_id = 4;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/945360/d611f3f87743b5121532023b1d3ee2dd0e96e772/header.jpg?t=1793821899' WHERE game_id = 5;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1245620/header.jpg?t=1790290043' WHERE game_id = 6;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/374320/header.jpg?t=1748630784' WHERE game_id = 7;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1778820/bb40124a525d6146a7c1ee4848bf3a14aa716224/header.jpg?t=1794438159' WHERE game_id = 8;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1086940/48a2fcbda8565bb45025e98fd8ebde8a7203f6a0/header.jpg?t=1777363040' WHERE game_id = 9;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/faffc0f560786e2f05104a8d2fac837c6969bf13/header.jpg?t=1790187113' WHERE game_id = 10;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/162664aa5da85f418105350c5d67ca565f6c3713/header.jpg?t=1793054556' WHERE game_id = 11;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/220/header.jpg?t=1745368545' WHERE game_id = 12;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/550/header.jpg?t=1772742214' WHERE game_id = 13;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/739630/8fc6642a091321343695b2273f8f7137c5d26483/header_alt_assets_14.jpg?t=1795522435' WHERE game_id = 14;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2881650/header.jpg?t=1785137321' WHERE game_id = 15;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/508440/header.jpg?t=1730715415' WHERE game_id = 16;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3527290/31bac6b2eccf09b368f5e95ce510bae2baf3cfcd/header.jpg?t=1792684718' WHERE game_id = 17;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/504230/header.jpg?t=1714089525' WHERE game_id = 18;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/header.jpg?t=1792530636' WHERE game_id = 19;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/48a93d6445a67520ea49833c93dae8f2e68fc540/header_alt_assets_9.jpg?t=1794474878' WHERE game_id = 20;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/292030/4b5b1ba5061b8a992cc69ac58b4245434edb4296/header.jpg?t=1793900434' WHERE game_id = 21;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145350/91ac334a2c137d08968ccc0bc474a02579602100/header.jpg?t=1779901265' WHERE game_id = 22;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/553850/850e2f9e5bb15c5706bb9a1edc832f4f782e8be5/header.jpg?t=1793395133' WHERE game_id = 23;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1794680/2ca07b690dde645771125ed9d9206c4c5fde4dd4/header.jpg?t=1794307910' WHERE game_id = 24;
+UPDATE games SET image_url = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3241660/62177765c05399116f0453fe1177b00ceed698c4/header_alt_assets_3.jpg?t=1793278962' WHERE game_id = 25;
+
 INSERT INTO tags (tag_id, name) VALUES
     (1,  'Action'),
     (2,  'Multiplayer'),

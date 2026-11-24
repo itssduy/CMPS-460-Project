@@ -29,7 +29,7 @@ def recommend_games(user_id):
                 JOIN owned o ON o.game_id = gt.game_id
             )
             SELECT g.game_id, g.title, g.developer, g.publisher,
-                   g.release_date, g.price,
+                   g.release_date, g.price, g.image_url,
                    COUNT(*) AS shared_tag_count,
                    GROUP_CONCAT(t.name, '|') AS shared_tags
             FROM games g

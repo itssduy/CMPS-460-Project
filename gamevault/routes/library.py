@@ -20,7 +20,7 @@ def list_library(user_id):
         games = connection.execute(
             """
             SELECT g.game_id, g.title, g.developer, g.publisher,
-                   g.release_date, g.price, l.created_at AS added_at
+                   g.release_date, g.price, g.image_url, l.created_at AS added_at
             FROM library l
             JOIN games g ON g.game_id = l.game_id
             WHERE l.user_id = ?

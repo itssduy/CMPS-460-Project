@@ -48,3 +48,10 @@ function platformBadges(platforms) {
     .map((name) => `<span class="badge text-bg-dark border me-1">${escapeHtml(name)}</span>`)
     .join("");
 }
+
+function gameImage(game, className) {
+  if (game.image_url) {
+    return `<img src="${escapeHtml(game.image_url)}" alt="${escapeHtml(game.title)}" class="${className}" loading="lazy">`;
+  }
+  return `<div class="${className} game-image-placeholder">${escapeHtml(game.title.charAt(0))}</div>`;
+}
