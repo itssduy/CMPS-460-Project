@@ -217,3 +217,22 @@ def delete_game(game_id):
         return jsonify({"error": "Game not found"}), 404
 
     return jsonify({"message": "Game successfully deleted"})
+
+# Sort by release date and popularity
+@games_bp.get("/games/sort-release-and-pop")
+def sort_by_release_and_pop():
+    connection = get_db()
+    try:
+        games = connection.execute(
+            """
+            SELECT g.*, COUNT(l.user_id) AS popularity
+            FROM games g
+            LEFT JOIN library l ON l.game_id = g.game_id
+            GROUP BY g.game_id
+            ORDER BY popularity DESC, g.release_date DESC, g.title ASC
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return jsonify([dict(game) for game in games])
