@@ -66,3 +66,58 @@ def delete_game_tag(game_id, tag_id):
         return jsonify({"error": "Game tag not found"}), 404
 
     return jsonify({"message": "Game tag successfully deleted"})
+
+# Search games by tag sorted by price
+@game_tags_bp.get("/games/by-tag")
+def search_by_tag():
+    tag_name = request.args.get("tag","").strip()
+    if not tag_name:
+        return jsonify({"error": "tag query parameter is required"}), 400
+
+    connection = get_db()
+    try:
+        games = connection.execute(
+            """
+            SELECT g.*
+            FROM games g
+            JOIN game_tags gt ON gt.game_id = g.game_id
+            JOIN tags t ON t.tag_id = gt.tag_id
+            WHERE t.name = ? COLLATE NOCASE
+            ORDER BY g.price ASC, g.title ASC
+            """,
+            (tag_name,),
+        ).fetchall()
+    finally:
+        connection.close()
+   
+    return jsonify([dict(game) for game in games])
+
+# Search by publisher and tag
+@game_tags_bp.get("/games/by-publisher-and-tag")
+def search_by_publisher_and_tag():
+    publisher = request.args.get("publisher", "").strip()
+    tag_name = request.args.get("tag", "").strip()
+
+    if not publisher or not tag_name:
+        return jsonify({
+            "error": "publisher and tag query parameters required"
+        }), 400
+
+    connection = get_db()
+    try:
+        games = connection.execute(
+            """
+            SELECT g.*
+            FROM games g
+            JOIN game_tags gt ON gt.game_id = g.game_id
+            JOIN tags t ON t.tag_id = gt.tag_id
+            WHERE g.publisher = ? COLLATE NOCASE AND t.name = ? COLLATE NOCASE
+            ORDER BY g.title ASC
+            """,
+            (publisher, tag_name),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return jsonify([dict(game) for game in games])
+    
