@@ -24,3 +24,30 @@ def init_db():
     finally:
         connection.close()
     click.echo(f"Initialized {DATABASE.name} with seed data")
+
+
+def attach_platforms(connection, games):
+    games = [dict(game) for game in games]
+    if not games:
+        return games
+
+    ids = [game["game_id"] for game in games]
+    placeholders = ", ".join("?" for _ in ids)
+    rows = connection.execute(
+        f"""
+        SELECT gp.game_id, p.name
+        FROM game_platforms gp
+        JOIN platforms p ON p.platform_id = gp.platform_id
+        WHERE gp.game_id IN ({placeholders})
+        ORDER BY p.platform_id
+        """,
+        ids,
+    ).fetchall()
+
+    platforms = {}
+    for row in rows:
+        platforms.setdefault(row["game_id"], []).append(row["name"])
+
+    for game in games:
+        game["platforms"] = platforms.get(game["game_id"], [])
+    return games

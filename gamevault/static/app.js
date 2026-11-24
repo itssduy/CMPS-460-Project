@@ -42,3 +42,9 @@ function showAlert(container, message, type = "danger") {
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>`;
 }
+
+function platformBadges(platforms) {
+  return platforms
+    .map((name) => `<span class="badge text-bg-dark border me-1">${escapeHtml(name)}</span>`)
+    .join("");
+}

@@ -17,6 +17,7 @@
           <tr>
             <th>Title</th>
             <th>Publisher</th>
+            <th>Platforms</th>
             <th>Price</th>
             <th>Added</th>
             <th></th>
@@ -41,7 +42,7 @@
 
   function renderLibrary(games) {
     if (games.length === 0) {
-      libraryRows.innerHTML = '<tr><td colspan="5" class="text-muted">No games in this library yet.</td></tr>';
+      libraryRows.innerHTML = '<tr><td colspan="6" class="text-muted">No games in this library yet.</td></tr>';
       return;
     }
 
@@ -49,6 +50,7 @@
       <tr>
         <td>${escapeHtml(game.title)}</td>
         <td>${escapeHtml(game.publisher)}</td>
+        <td>${platformBadges(game.platforms)}</td>
         <td>${formatPrice(game.price)}</td>
         <td>${formatDate(game.added_at)}</td>
         <td class="text-end">
@@ -69,6 +71,7 @@
           <div class="card-body d-flex flex-column">
             <h3 class="h6 card-title mb-1">${escapeHtml(game.title)}</h3>
             <p class="text-muted small mb-2">${escapeHtml(game.publisher)} · ${formatPrice(game.price)}</p>
+            <div class="mb-2">${platformBadges(game.platforms)}</div>
             <div class="mb-3">
               ${game.shared_tags.map((tag) => `<span class="badge text-bg-secondary me-1">${escapeHtml(tag)}</span>`).join("")}
             </div>

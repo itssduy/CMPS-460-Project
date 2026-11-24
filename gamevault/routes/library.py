@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from gamevault.db import get_db
+from gamevault.db import attach_platforms, get_db
 
 library_bp = Blueprint("library", __name__)
 
@@ -28,10 +28,11 @@ def list_library(user_id):
             """,
             (user_id,),
         ).fetchall()
+        games = attach_platforms(connection, games)
     finally:
         connection.close()
 
-    return jsonify([dict(game) for game in games])
+    return jsonify(games)
 
 
 @library_bp.post("/users/<int:user_id>/library")

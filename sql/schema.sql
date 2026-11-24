@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS game_platforms;
+DROP TABLE IF EXISTS platforms;
 DROP TABLE IF EXISTS game_tags;
 DROP TABLE IF EXISTS library;
 DROP TABLE IF EXISTS tags;
@@ -38,6 +40,18 @@ CREATE TABLE game_tags (
     PRIMARY KEY (game_id, tag_id)
 );
 
-CREATE INDEX idx_library_game    ON library (game_id);
-CREATE INDEX idx_game_tags_tag   ON game_tags (tag_id);
-CREATE INDEX idx_games_publisher ON games (publisher);
+CREATE TABLE platforms (
+    platform_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT    NOT NULL UNIQUE COLLATE NOCASE
+);
+
+CREATE TABLE game_platforms (
+    game_id     INTEGER NOT NULL REFERENCES games (game_id)         ON DELETE CASCADE,
+    platform_id INTEGER NOT NULL REFERENCES platforms (platform_id) ON DELETE CASCADE,
+    PRIMARY KEY (game_id, platform_id)
+);
+
+CREATE INDEX idx_library_game            ON library (game_id);
+CREATE INDEX idx_game_tags_tag           ON game_tags (tag_id);
+CREATE INDEX idx_game_platforms_platform ON game_platforms (platform_id);
+CREATE INDEX idx_games_publisher         ON games (publisher);
