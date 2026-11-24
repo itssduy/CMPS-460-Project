@@ -21,3 +21,8 @@ def new_user():
 @pages_bp.get("/users/<int:user_id>")
 def user_profile(user_id):
     return render_template("users/profile.html", user_id=user_id)
+
+
+@pages_bp.get("/users/<int:user_id>/library")
+def user_library(user_id):
+    return render_template("users/library.html", user_id=user_id)
