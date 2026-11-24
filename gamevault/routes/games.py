@@ -157,7 +157,7 @@ def update_game(game_id):
         if isinstance (price, bool) or not isinstance(price, (int, float)):
             return jsonify({"error": "price must be a numebr"}), 400
         if not isfinite(price) or price < 0:
-            return jsonify({"error": "price must be a finite number of 0 or more"})
+            return jsonify({"error": "price must be a finite number of 0 or more"}), 400
         updates["price"] = price
 
     connection = get_db()
