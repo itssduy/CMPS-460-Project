@@ -17,7 +17,12 @@
       <div id="top-tags-list"></div>
     </section>
 
-    <div class="table-responsive mb-5">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+      <input type="search" id="library-search" class="form-control w-auto flex-grow-1" style="max-width: 24rem" placeholder="Search this library" aria-label="Search this library">
+      <span id="library-count" class="text-muted small"></span>
+    </div>
+
+    <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead>
           <tr>
@@ -31,6 +36,9 @@
         </thead>
         <tbody id="library"></tbody>
       </table>
+    </div>
+    <div class="text-center mb-5">
+      <button type="button" id="show-more" class="btn btn-outline-secondary d-none">Show more</button>
     </div>
 
     <h2 class="h4">Recommended for you</h2>
@@ -56,7 +64,7 @@
       }
     }
 
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8);
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5);
     document.getElementById("top-tags").classList.toggle("d-none", top.length === 0);
     if (top.length === 0) {
       return;
@@ -75,14 +83,37 @@
     }).join("");
   }
 
+  const PAGE_SIZE = 10;
+  const searchInput = document.getElementById("library-search");
+  const showMoreButton = document.getElementById("show-more");
+  let libraryGames = [];
+  let visibleCount = PAGE_SIZE;
+
   function renderLibrary(games) {
+    libraryGames = games;
     renderTopTags(games);
-    if (games.length === 0) {
-      libraryRows.innerHTML = '<tr><td colspan="6" class="text-muted">No games in this library yet.</td></tr>';
+    renderLibraryRows();
+  }
+
+  function renderLibraryRows() {
+    const query = searchInput.value.trim().toLowerCase();
+    const matches = libraryGames.filter((game) =>
+      game.title.toLowerCase().includes(query) || game.publisher.toLowerCase().includes(query));
+    const shown = matches.slice(0, visibleCount);
+
+    showMoreButton.classList.toggle("d-none", matches.length <= shown.length);
+    showMoreButton.textContent = `Show more (${matches.length - shown.length} left)`;
+    document.getElementById("library-count").textContent = libraryGames.length
+      ? `Showing ${shown.length} of ${matches.length} game${matches.length === 1 ? "" : "s"}`
+      : "";
+
+    if (shown.length === 0) {
+      const message = libraryGames.length ? "No games match that search." : "No games in this library yet.";
+      libraryRows.innerHTML = `<tr><td colspan="6" class="text-muted">${message}</td></tr>`;
       return;
     }
 
-    libraryRows.innerHTML = games.map((game) => `
+    libraryRows.innerHTML = shown.map((game) => `
       <tr>
         <td>
           <a href="/games/${game.game_id}" class="d-flex align-items-center gap-3 text-reset text-decoration-none">
@@ -99,6 +130,16 @@
         </td>
       </tr>`).join("");
   }
+
+  searchInput.addEventListener("input", () => {
+    visibleCount = PAGE_SIZE;
+    renderLibraryRows();
+  });
+
+  showMoreButton.addEventListener("click", () => {
+    visibleCount += PAGE_SIZE;
+    renderLibraryRows();
+  });
 
   function renderRecommendations(games) {
     if (games.length === 0) {
