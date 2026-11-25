@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from gamevault.auth import auth_bp
 from gamevault.db import init_db
@@ -24,6 +25,8 @@ def create_app():
     app.config["STEAM_API_KEY"] = os.environ.get("STEAM_API_KEY")
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or os.urandom(32)
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SECURE_COOKIES") == "1"
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp, catalog_bp, platforms_bp, images_bp, players_bp]:
         app.register_blueprint(blueprint, url_prefix="/api")
