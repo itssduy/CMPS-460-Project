@@ -26,3 +26,8 @@ def user_profile(user_id):
 @pages_bp.get("/users/<int:user_id>/library")
 def user_library(user_id):
     return render_template("users/library.html", user_id=user_id)
+
+
+@pages_bp.get("/games/<int:game_id>")
+def game_detail(game_id):
+    return render_template("games/detail.html", game_id=game_id)
