@@ -24,18 +24,23 @@
         <ul class="navbar-nav ms-auto">
           {{ nav_link("/", "Catalog") }}
           {{ nav_link("/players", "Players") }}
-          {% if current_user and current_user.is_admin %}
-            {{ nav_link("/users", "Users") }}
-          {% endif %}
-          {{ nav_link("/tags", "Tags") }}
-          {{ nav_link("/games/new", "Add Game") }}
           {% if current_user %}
-            {{ nav_link("/users/" ~ current_user.user_id ~ "/library", "My Library") }}
-            <li class="nav-item">
-              <a class="nav-link" href="/users/{{ current_user.user_id }}">{{ current_user.username }}</a>
-            </li>
-            <li class="nav-item">
-              <button type="button" id="logout" class="nav-link btn btn-link">Log out</button>
+            <li class="nav-item dropdown">
+              <button type="button" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ current_user.username }}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="/users/{{ current_user.user_id }}/library">My Library</a></li>
+                <li><a class="dropdown-item" href="/users/{{ current_user.user_id }}">Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/games/new">Add Game</a></li>
+                <li><a class="dropdown-item" href="/tags">Tags</a></li>
+                {% if current_user.is_admin %}
+                  <li><a class="dropdown-item" href="/users">Users</a></li>
+                {% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li><button type="button" id="logout" class="dropdown-item">Log out</button></li>
+              </ul>
             </li>
           {% else %}
             {{ nav_link("/login", "Log in") }}
