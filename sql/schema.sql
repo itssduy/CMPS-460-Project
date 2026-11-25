@@ -18,11 +18,13 @@ CREATE TABLE games (
 );
 
 CREATE TABLE users (
-    user_id    INTEGER PRIMARY KEY AUTOINCREMENT,
-    username   TEXT NOT NULL UNIQUE,
-    email      TEXT NOT NULL UNIQUE,
-    steam_id   TEXT UNIQUE,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    user_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT    NOT NULL UNIQUE,
+    email         TEXT    NOT NULL UNIQUE,
+    password_hash TEXT    NOT NULL,
+    is_admin      INTEGER NOT NULL DEFAULT 0 CHECK (is_admin IN (0, 1)),
+    steam_id      TEXT    UNIQUE,
+    created_at    TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE tags (

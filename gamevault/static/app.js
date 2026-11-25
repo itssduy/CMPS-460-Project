@@ -94,3 +94,8 @@ function storeUrl(platform, game) {
       return `https://www.google.com/search?q=${encodeURIComponent(`${game.title} ${platform}`)}`;
   }
 }
+
+document.getElementById("logout")?.addEventListener("click", async () => {
+  await api("POST", "/api/logout");
+  window.location = "/";
+});

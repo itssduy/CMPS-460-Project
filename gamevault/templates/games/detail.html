@@ -84,12 +84,18 @@
   async function load() {
     const [game, users] = await Promise.all([
       api("GET", `/api/catalog/${gameId}`),
-      api("GET", "/api/users"),
+      currentUser?.is_admin ? api("GET", "/api/users") : currentUser ? [currentUser] : [],
     ]);
     render(game);
-    libraryForm.elements.user.innerHTML = users
+    if (!currentUser) {
+      libraryForm.innerHTML = '<span><a href="/login">Log in</a> to add this game to your library.</span>';
+    } else if (!currentUser.is_admin) {
+      libraryForm.querySelector("label").textContent = "Add to your library";
+      libraryForm.elements.user.classList.add("d-none");
+    }
+    libraryForm.elements.user?.insertAdjacentHTML("beforeend", users
       .map((user) => `<option value="${user.user_id}">${escapeHtml(user.username)}</option>`)
-      .join("");
+      .join(""));
     document.getElementById("game-page").classList.remove("d-none");
   }
 

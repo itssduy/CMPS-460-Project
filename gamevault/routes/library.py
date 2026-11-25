@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from gamevault.auth import api_user_access_required
 from gamevault.db import attach_platforms, get_db
 
 library_bp = Blueprint("library", __name__)
@@ -36,6 +37,7 @@ def list_library(user_id):
 
 
 @library_bp.post("/users/<int:user_id>/library")
+@api_user_access_required
 def add_to_library(user_id):
     data = request.get_json(silent=True)
 
@@ -76,6 +78,7 @@ def add_to_library(user_id):
 
 
 @library_bp.delete("/users/<int:user_id>/library/<int:game_id>")
+@api_user_access_required
 def remove_from_library(user_id, game_id):
     connection = get_db()
     try:

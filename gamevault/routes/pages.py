@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template
 
+from gamevault.auth import page_admin_required, page_user_access_required
+
 pages_bp = Blueprint("pages", __name__)
 
 
@@ -9,6 +11,7 @@ def index():
 
 
 @pages_bp.get("/users")
+@page_admin_required
 def users():
     return render_template("users/list.html")
 
@@ -19,11 +22,13 @@ def new_user():
 
 
 @pages_bp.get("/users/<int:user_id>")
+@page_user_access_required
 def user_profile(user_id):
     return render_template("users/profile.html", user_id=user_id)
 
 
 @pages_bp.get("/users/<int:user_id>/library")
+@page_user_access_required
 def user_library(user_id):
     return render_template("users/library.html", user_id=user_id)
 

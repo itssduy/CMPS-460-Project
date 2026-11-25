@@ -1,4 +1,5 @@
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
+from gamevault.auth import api_user_access_required, page_user_access_required
 from gamevault.db import get_db
 from gamevault.steam import SteamError, import_library, login_url, verify_login
 
@@ -11,11 +12,12 @@ def callback_url(user_id):
 
 def find_user(connection, user_id):
     return connection.execute(
-        "SELECT * FROM users WHERE user_id = ?", (user_id,)
+        "SELECT user_id, steam_id FROM users WHERE user_id = ?", (user_id,)
     ).fetchone()
 
 
 @steam_bp.get("/users/<int:user_id>/steam/login")
+@page_user_access_required
 def steam_login(user_id):
     connection = get_db()
     try:
@@ -30,6 +32,7 @@ def steam_login(user_id):
 
 
 @steam_bp.get("/users/<int:user_id>/steam/callback")
+@page_user_access_required
 def steam_callback(user_id):
     def back_to_profile(message):
         return redirect(url_for("pages.user_profile", user_id=user_id, steam_error=message))
@@ -70,6 +73,7 @@ def steam_callback(user_id):
 
 
 @steam_bp.post("/api/users/<int:user_id>/steam/import")
+@api_user_access_required
 def steam_import(user_id):
     connection = get_db()
     try:
@@ -92,6 +96,7 @@ def steam_import(user_id):
 
 
 @steam_bp.delete("/api/users/<int:user_id>/steam")
+@api_user_access_required
 def steam_unlink(user_id):
     connection = get_db()
     try:

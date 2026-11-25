@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, jsonify
 
+from gamevault.auth import auth_bp
 from gamevault.db import init_db
 from gamevault.routes.catalog import catalog_bp
 from gamevault.routes.games import games_bp
@@ -20,10 +21,13 @@ def create_app():
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
     app.config["STEAM_API_KEY"] = os.environ.get("STEAM_API_KEY")
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or os.urandom(32)
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
     for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp, catalog_bp, platforms_bp, images_bp]:
         app.register_blueprint(blueprint, url_prefix="/api")
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(pages_bp)
     app.register_blueprint(steam_bp)
     app.cli.add_command(init_db)

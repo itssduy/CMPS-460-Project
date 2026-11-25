@@ -26,6 +26,10 @@
             <label for="email" class="form-label">Email</label>
             <input id="email" name="email" type="email" class="form-control" required>
           </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">New password <span class="text-muted">(optional)</span></label>
+            <input id="password" name="password" type="password" class="form-control" minlength="8" autocomplete="new-password">
+          </div>
           <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary">Save changes</button>
             <button type="button" id="delete-user" class="btn btn-outline-danger">Delete account</button>
@@ -92,7 +96,9 @@
       const user = await api("PATCH", `/api/users/${userId}`, {
         username: form.elements.username.value,
         email: form.elements.email.value,
+        password: form.elements.password.value,
       });
+      form.elements.password.value = "";
       render(user);
       showAlert(alertBox, "Profile updated.", "success");
     } catch (error) {
@@ -128,7 +134,7 @@
     }
     try {
       await api("DELETE", `/api/users/${userId}`);
-      window.location = "/users";
+      window.location = currentUser.user_id === userId ? "/" : "/users";
     } catch (error) {
       showAlert(alertBox, error.message);
     }

@@ -1,7 +1,10 @@
+import os
+import secrets
 import sqlite3
 from pathlib import Path
 
 import click
+from werkzeug.security import generate_password_hash
 
 ROOT = Path(__file__).resolve().parent.parent
 DATABASE = ROOT / "games.db"
@@ -21,9 +24,25 @@ def init_db():
     try:
         connection.executescript((SQL_DIR / "schema.sql").read_text())
         connection.executescript((SQL_DIR / "seed.sql").read_text())
+
+        password = os.environ.get("ADMIN_PASSWORD") or secrets.token_urlsafe(12)
+        connection.execute(
+            """
+            INSERT INTO users (username, email, password_hash, is_admin)
+            VALUES ('admin', 'admin@gamevault.local', ?, 1)
+            """,
+            (generate_password_hash(password),),
+        )
+        connection.commit()
     finally:
         connection.close()
+
     click.echo(f"Initialized {DATABASE.name} with seed data")
+    if os.environ.get("ADMIN_PASSWORD"):
+        click.echo("Admin login: admin (password from ADMIN_PASSWORD)")
+    else:
+        click.echo(f"Admin login: admin / {password}")
+        click.echo("Set ADMIN_PASSWORD in .env to choose the admin password.")
 
 
 def attach_platforms(connection, games):

@@ -23,9 +23,23 @@
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav ms-auto">
           {{ nav_link("/", "Catalog") }}
-          {{ nav_link("/users", "Users") }}
+          {% if current_user and current_user.is_admin %}
+            {{ nav_link("/users", "Users") }}
+          {% endif %}
           {{ nav_link("/tags", "Tags") }}
           {{ nav_link("/games/new", "Add Game") }}
+          {% if current_user %}
+            {{ nav_link("/users/" ~ current_user.user_id ~ "/library", "My Library") }}
+            <li class="nav-item">
+              <a class="nav-link" href="/users/{{ current_user.user_id }}">{{ current_user.username }}</a>
+            </li>
+            <li class="nav-item">
+              <button type="button" id="logout" class="nav-link btn btn-link">Log out</button>
+            </li>
+          {% else %}
+            {{ nav_link("/login", "Log in") }}
+            {{ nav_link("/users/new", "Register") }}
+          {% endif %}
         </ul>
       </div>
     </div>
@@ -40,6 +54,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>const currentUser = {{ current_user | tojson }};</script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
