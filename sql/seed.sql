@@ -779,14 +779,14 @@ INSERT INTO game_platforms (game_id, platform_id) VALUES
     (100, 4);
 
 INSERT INTO users (user_id, username, email, password_hash, created_at) VALUES
-    (1, 'nightowl', 'nightowl@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2025-02-03 02:15:33'),
-    (2, 'pixelpusher', 'pixelpusher@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2025-03-21 14:08:12'),
-    (3, 'frag_queen', 'frag_queen@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2025-04-09 20:47:39'),
-    (4, 'cozygamer', 'cozygamer@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2025-05-30 11:30:00'),
-    (5, 'speedrunsam', 'speedrunsam@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2025-07-12 16:55:21'),
-    (6, 'lootgoblin', 'lootgoblin@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2025-08-25 22:03:47'),
-    (7, 'retro_rick', 'retro_rick@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2025-10-02 09:19:10'),
-    (8, 'newbie42', 'newbie42@gmail.com', 'scrypt:32768:8:1$mIOMZTv7TqmgiE5F$6c15d57dfd9a70acdb7d7251152e7c1970f1a90b2f86d66882b4646e12a780e83bacd48f579b3784325a594b3e4d9c75179c677d30649154f7cd9a4ac743b55d', '2026-10-30 13:45:00');
+    (1, 'penguin', 'penguin@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2025-02-03 02:15:33'),
+    (2, 'otter', 'otter@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2025-03-21 14:08:12'),
+    (3, 'goblin', 'goblin@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2025-04-09 20:47:39'),
+    (4, 'capybara', 'capybara@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2025-05-30 11:30:00'),
+    (5, 'raccoon', 'raccoon@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2025-07-12 16:55:21'),
+    (6, 'panda', 'panda@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2025-08-25 22:03:47'),
+    (7, 'koala', 'koala@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2025-10-02 09:19:10'),
+    (8, 'hamster', 'hamster@gmail.com', 'scrypt:32768:8:1$C4oJFbRBNXfg6crs$16482fa4135d32e2209cf11b1f610dc665bf9a34eac4b2b5fe7ac9eef1efaa4c77847f52e81dc3fe44aa19d38485ba0c83d9452243255eb3bbd9f347c2f102c0', '2026-10-30 13:45:00');
 
 INSERT INTO library (user_id, game_id, created_at) VALUES
     (1, 1, '2025-05-21 21:21:33'),
