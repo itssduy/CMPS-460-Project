@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Tags · GameVault{% endblock %}
+
+{% block content %}
+  <h1 class="mb-3">Tags</h1>
+
+  <div id="alert"></div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <form id="create-form" class="input-group mb-3">
+        <input name="name" class="form-control" placeholder="New tag name" aria-label="New tag name" required>
+        <button type="submit" class="btn btn-primary">Add tag</button>
+      </form>
+      <div id="tag-list" class="list-group"></div>
+    </div>
+
+    <div class="col-lg-8">
+      <div id="empty-panel" class="text-muted">Select a tag to see and manage its games.</div>
+
+      <div id="tag-panel" class="d-none">
+        <h2 id="tag-heading" class="h4 mb-3"></h2>
+        <form id="rename-form" class="d-flex flex-wrap gap-2 mb-3">
+          <input name="name" class="form-control w-auto flex-grow-1" aria-label="Tag name" required>
+          <button type="submit" class="btn btn-outline-secondary">Rename</button>
+          <button type="button" id="delete-tag" class="btn btn-outline-danger">Delete tag</button>
+        </form>
+
+        <form id="assign-form" class="input-group mb-3">
+          <select name="game" class="form-select" aria-label="Game to tag" required></select>
+          <button type="submit" class="btn btn-primary">Add to tag</button>
+        </form>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Game</th>
+                <th>Publisher</th>
+                <th>Price</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tag-games"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const alertBox = document.getElementById("alert");
+  const tagList = document.getElementById("tag-list");
+  const createForm = document.getElementById("create-form");
+  const renameForm = document.getElementById("rename-form");
+  const assignForm = document.getElementById("assign-form");
+  const tagGames = document.getElementById("tag-games");
+
+  let tags = [];
+  let games = [];
+  let selectedId = Number(new URLSearchParams(window.location.search).get("tag")) || null;
+
+  function selectedTag() {
+    return tags.find((tag) => tag.tag_id === selectedId);
+  }
+
+  function renderTagList() {
+    const counts = {};
+    for (const game of games) {
+      for (const tag of game.tags) {
+        counts[tag.tag_id] = (counts[tag.tag_id] || 0) + 1;
+      }
+    }
+
+    tagList.innerHTML = tags.map((tag) => `
+      <button type="button" data-tag="${tag.tag_id}"
+        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center${tag.tag_id === selectedId ? " active" : ""}">
+        ${escapeHtml(tag.name)}
+        <span class="badge text-bg-secondary rounded-pill">${counts[tag.tag_id] || 0}</span>
+      </button>`).join("") || '<p class="text-muted">No tags yet.</p>';
+  }
+
+  async function renderPanel() {
+    const tag = selectedTag();
+    document.getElementById("empty-panel").classList.toggle("d-none", Boolean(tag));
+    document.getElementById("tag-panel").classList.toggle("d-none", !tag);
+    history.replaceState(null, "", tag ? `/tags?tag=${tag.tag_id}` : "/tags");
+    if (!tag) {
+      return;
+    }
+
+    renameForm.elements.name.value = tag.name;
+
+    const tagged = await api("GET", `/api/games/by-tag?tag=${encodeURIComponent(tag.name)}`);
+    const taggedIds = new Set(tagged.map((game) => game.game_id));
+    document.getElementById("tag-heading").textContent =
+      `${tag.name} · ${tagged.length} game${tagged.length === 1 ? "" : "s"}`;
+
+    tagGames.innerHTML = tagged.map((game) => `
+      <tr>
+        <td>
+          <div class="d-flex align-items-center gap-3">
+            ${gameImage(game, "game-thumb")}
+            <a href="/games/${game.game_id}" class="text-reset">${escapeHtml(game.title)}</a>
+          </div>
+        </td>
+        <td>${escapeHtml(game.publisher)}</td>
+        <td>${formatPrice(game.price)}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-danger" data-untag="${game.game_id}">Remove</button>
+        </td>
+      </tr>`).join("") || '<tr><td colspan="4" class="text-muted">No games have this tag yet.</td></tr>';
+
+    const untagged = games.filter((game) => !taggedIds.has(game.game_id));
+    assignForm.elements.game.innerHTML = untagged
+      .map((game) => `<option value="${game.game_id}">${escapeHtml(game.title)}</option>`)
+      .join("");
+    assignForm.querySelector("button").disabled = untagged.length === 0;
+  }
+
+  async function reload() {
+    [tags, games] = await Promise.all([api("GET", "/api/tags"), api("GET", "/api/catalog")]);
+    tags.sort((a, b) => a.name.localeCompare(b.name));
+    if (!selectedTag()) {
+      selectedId = null;
+    }
+    renderTagList();
+    await renderPanel();
+  }
+
+  async function run(action) {
+    try {
+      await action();
+      alertBox.innerHTML = "";
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+  }
+
+  tagList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tag]");
+    if (!button) {
+      return;
+    }
+    selectedId = Number(button.dataset.tag);
+    renderTagList();
+    run(renderPanel);
+  });
+
+  createForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    run(async () => {
+      const tag = await api("POST", "/api/tags", { name: createForm.elements.name.value });
+      createForm.reset();
+      selectedId = tag.tag_id;
+      await reload();
+    });
+  });
+
+  renameForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    run(async () => {
+      await api("PATCH", `/api/tags/${selectedId}`, { name: renameForm.elements.name.value });
+      await reload();
+    });
+  });
+
+  document.getElementById("delete-tag").addEventListener("click", () => {
+    const tag = selectedTag();
+    if (!confirm(`Delete the "${tag.name}" tag? It will be removed from every game.`)) {
+      return;
+    }
+    run(async () => {
+      await api("DELETE", `/api/tags/${selectedId}`);
+      selectedId = null;
+      await reload();
+    });
+  });
+
+  assignForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    run(async () => {
+      await api("POST", `/api/games/${assignForm.elements.game.value}/tags`, { tag_id: selectedId });
+      await reload();
+    });
+  });
+
+  tagGames.addEventListener("click", (event) => {
+    const gameId = event.target.dataset.untag;
+    if (!gameId) {
+      return;
+    }
+    run(async () => {
+      await api("DELETE", `/api/games/${gameId}/tags/${selectedId}`);
+      await reload();
+    });
+  });
+
+  run(reload);
+</script>
+{% endblock %}

@@ -41,3 +41,8 @@ def new_game():
 @pages_bp.get("/games/<int:game_id>/edit")
 def edit_game(game_id):
     return render_template("games/form.html", game_id=game_id)
+
+
+@pages_bp.get("/tags")
+def tags():
+    return render_template("tags.html")
