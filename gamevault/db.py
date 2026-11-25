@@ -27,8 +27,8 @@ def init_db():
         password = os.environ.get("ADMIN_PASSWORD") or "pass"
         connection.execute(
             """
-            INSERT INTO users (username, email, password_hash, is_admin)
-            VALUES ('admin', 'admin@gamevault.local', ?, 1)
+            INSERT INTO users (username, password_hash, is_admin)
+            VALUES ('admin', ?, 1)
             """,
             (generate_password_hash(password),),
         )
