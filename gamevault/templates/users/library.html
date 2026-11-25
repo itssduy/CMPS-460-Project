@@ -8,7 +8,7 @@
   <div id="library-page" class="d-none">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
       <h1 id="library-title" class="mb-0"></h1>
-      <a id="profile-link" class="btn btn-outline-secondary" href="/users/{{ user_id }}">Profile</a>
+      <a id="profile-link" class="btn btn-outline-secondary d-none" href="/users/{{ user_id }}">Profile</a>
     </div>
 
     <section id="top-tags" class="card card-body mb-4 d-none" aria-labelledby="top-tags-title">
@@ -41,15 +41,18 @@
       <button type="button" id="show-more" class="btn btn-outline-secondary d-none">Show more</button>
     </div>
 
-    <h2 class="h4">Recommended for you</h2>
-    <p class="text-muted">Games that share tags with ones in this library.</p>
-    <div id="recommendations" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3"></div>
+    <section id="recs-section" class="d-none">
+      <h2 class="h4">Recommended for you</h2>
+      <p class="text-muted">Games that share tags with ones in this library.</p>
+      <div id="recommendations" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3"></div>
+    </section>
   </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
   const userId = {{ user_id }};
+  const canManage = Boolean(currentUser && (currentUser.is_admin || currentUser.user_id === userId));
   const alertBox = document.getElementById("alert");
   const libraryRows = document.getElementById("library");
   const recommendationCards = document.getElementById("recommendations");
@@ -126,7 +129,7 @@
         <td>${formatPrice(game.price)}</td>
         <td>${formatDate(game.added_at)}</td>
         <td class="text-end">
-          <button class="btn btn-sm btn-outline-danger" data-remove="${game.game_id}">Remove</button>
+          ${canManage ? `<button class="btn btn-sm btn-outline-danger" data-remove="${game.game_id}">Remove</button>` : ""}
         </td>
       </tr>`).join("");
   }
@@ -167,10 +170,12 @@
   async function load() {
     const [library, recommendations] = await Promise.all([
       api("GET", `/api/users/${userId}/library`),
-      api("GET", `/api/users/${userId}/recommendations?limit=6`),
+      canManage ? api("GET", `/api/users/${userId}/recommendations?limit=6`) : null,
     ]);
     renderLibrary(library);
-    renderRecommendations(recommendations);
+    if (recommendations) {
+      renderRecommendations(recommendations);
+    }
   }
 
   const steamParams = new URLSearchParams(window.location.search);
@@ -183,10 +188,15 @@
     history.replaceState(null, "", window.location.pathname);
   }
 
-  api("GET", `/api/users/${userId}`)
+  api("GET", `/api/players/${userId}`)
     .then((user) => {
       document.title = `${user.username}'s Library · GameVault`;
       document.getElementById("library-title").textContent = `${user.username}'s Library`;
+      if (currentUser?.user_id !== userId) {
+        document.getElementById("top-tags-title").textContent = `What ${user.username} plays most`;
+      }
+      document.getElementById("profile-link").classList.toggle("d-none", !canManage);
+      document.getElementById("recs-section").classList.toggle("d-none", !canManage);
       document.getElementById("library-page").classList.remove("d-none");
       return load();
     })

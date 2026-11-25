@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Players · GameVault{% endblock %}
+
+{% block content %}
+  <h1 class="mb-1">Players</h1>
+  <p class="text-muted">See what other people are playing.</p>
+
+  <input type="search" id="player-search" class="form-control mb-3" style="max-width: 24rem" placeholder="Search by username" aria-label="Search by username">
+
+  <div id="alert"></div>
+  <div id="players" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const grid = document.getElementById("players");
+  const search = document.getElementById("player-search");
+  let players = [];
+
+  function render() {
+    const query = search.value.trim().toLowerCase();
+    const matches = players.filter((player) => player.username.toLowerCase().includes(query));
+
+    if (matches.length === 0) {
+      grid.innerHTML = players.length
+        ? '<p class="text-muted">No players match that search.</p>'
+        : '<p class="text-muted">No players yet.</p>';
+      return;
+    }
+
+    grid.innerHTML = matches.map((player) => `
+      <div class="col">
+        <div class="card h-100 game-card">
+          <div class="card-body">
+            <h2 class="h5 mb-1">
+              <a href="/users/${player.user_id}/library" class="stretched-link text-reset text-decoration-none">${escapeHtml(player.username)}</a>
+              ${currentUser?.user_id === player.user_id ? '<span class="badge text-bg-primary align-middle ms-1">You</span>' : ""}
+            </h2>
+            <p class="text-muted small mb-2">Joined ${formatDate(player.created_at)}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span>${player.game_count} game${player.game_count === 1 ? "" : "s"}</span>
+              ${player.top_tag ? `<span class="badge text-bg-secondary">Mostly ${escapeHtml(player.top_tag)}</span>` : ""}
+            </div>
+          </div>
+        </div>
+      </div>`).join("");
+  }
+
+  search.addEventListener("input", render);
+
+  api("GET", "/api/players")
+    .then((data) => {
+      players = data;
+      render();
+    })
+    .catch((error) => showAlert(document.getElementById("alert"), error.message));
+</script>
+{% endblock %}

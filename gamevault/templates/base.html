@@ -23,6 +23,7 @@
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav ms-auto">
           {{ nav_link("/", "Catalog") }}
+          {{ nav_link("/players", "Players") }}
           {% if current_user and current_user.is_admin %}
             {{ nav_link("/users", "Users") }}
           {% endif %}

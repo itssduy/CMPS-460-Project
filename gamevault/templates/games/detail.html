@@ -71,8 +71,6 @@
       game.developer === game.publisher ? game.developer : `${game.developer} · Published by ${game.publisher}`;
     document.getElementById("game-release").textContent = formatReleaseDate(game.release_date);
     document.getElementById("game-price").textContent = formatPrice(game.price);
-    document.getElementById("game-popularity").textContent =
-      `${game.popularity} user${game.popularity === 1 ? "" : "s"}`;
     document.getElementById("game-platforms").innerHTML = game.platforms.map((platform) => `
       <a href="${escapeHtml(storeUrl(platform, game))}" class="btn btn-sm btn-outline-light" target="_blank" rel="noopener">
         ${escapeHtml(platform)} &#8599;
@@ -81,12 +79,25 @@
       tagBadges(game.tags) || '<span class="text-muted">No tags</span>';
   }
 
+  const SHOWN_OWNERS = 5;
+
+  async function renderOwners() {
+    const owners = await api("GET", `/api/games/${gameId}/owners`);
+    const links = owners.slice(0, SHOWN_OWNERS)
+      .map((owner) => `<a href="/users/${owner.user_id}/library" class="text-decoration-none">${escapeHtml(owner.username)}</a>`);
+    const extra = owners.length - SHOWN_OWNERS;
+    document.getElementById("game-popularity").innerHTML = owners.length === 0
+      ? '<span class="text-muted">No one yet</span>'
+      : links.join(", ") + (extra > 0 ? ` and ${extra} more` : "");
+  }
+
   async function load() {
     const [game, users] = await Promise.all([
       api("GET", `/api/catalog/${gameId}`),
       currentUser?.is_admin ? api("GET", "/api/users") : currentUser ? [currentUser] : [],
     ]);
     render(game);
+    await renderOwners();
     if (!currentUser) {
       libraryForm.innerHTML = '<span><a href="/login">Log in</a> to add this game to your library.</span>';
     } else if (!currentUser.is_admin) {
@@ -110,6 +121,7 @@
     try {
       await api("POST", `/api/users/${userId}/library`, { game_id: gameId });
       render(await api("GET", `/api/catalog/${gameId}`));
+      await renderOwners();
       alertBox.innerHTML = `
         <div class="alert alert-success alert-dismissible fade show" role="alert">
           Added to <a href="/users/${userId}/library" class="alert-link">${escapeHtml(username)}'s library</a>.

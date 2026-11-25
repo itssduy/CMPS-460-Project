@@ -10,6 +10,7 @@ from gamevault.routes.images import images_bp
 from gamevault.routes.library import library_bp
 from gamevault.routes.pages import pages_bp
 from gamevault.routes.platforms import platforms_bp
+from gamevault.routes.players import players_bp
 from gamevault.routes.recommendations import recommendations_bp
 from gamevault.routes.steam import steam_bp
 from gamevault.routes.tags import tags_bp
@@ -24,7 +25,7 @@ def create_app():
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or os.urandom(32)
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-    for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp, catalog_bp, platforms_bp, images_bp]:
+    for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp, catalog_bp, platforms_bp, images_bp, players_bp]:
         app.register_blueprint(blueprint, url_prefix="/api")
 
     app.register_blueprint(auth_bp)

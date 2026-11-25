@@ -28,7 +28,6 @@ def user_profile(user_id):
 
 
 @pages_bp.get("/users/<int:user_id>/library")
-@page_user_access_required
 def user_library(user_id):
     return render_template("users/library.html", user_id=user_id)
 
@@ -46,6 +45,11 @@ def new_game():
 @pages_bp.get("/games/<int:game_id>/edit")
 def edit_game(game_id):
     return render_template("games/form.html", game_id=game_id)
+
+
+@pages_bp.get("/players")
+def players():
+    return render_template("players.html")
 
 
 @pages_bp.get("/tags")
