@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Register · GameVault{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <h1 class="mb-3">Register</h1>
+
+      <div id="alert"></div>
+
+      <form id="register-form" class="card card-body">
+        <div class="mb-3">
+          <label for="username" class="form-label">Username</label>
+          <input id="username" name="username" class="form-control" required autocomplete="username">
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input id="email" name="email" type="email" class="form-control" required autocomplete="email">
+        </div>
+        <button type="submit" class="btn btn-primary">Create account</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const form = document.getElementById("register-form");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector("button");
+    button.disabled = true;
+
+    try {
+      const user = await api("POST", "/api/users", {
+        username: form.elements.username.value,
+        email: form.elements.email.value,
+      });
+      window.location = `/users/${user.user_id}`;
+    } catch (error) {
+      showAlert(document.getElementById("alert"), error.message);
+      button.disabled = false;
+    }
+  });
+</script>
+{% endblock %}

@@ -6,3 +6,23 @@ pages_bp = Blueprint("pages", __name__)
 @pages_bp.get("/")
 def index():
     return render_template("index.html")
+
+
+@pages_bp.get("/users")
+def users():
+    return render_template("users/list.html")
+
+
+@pages_bp.get("/users/new")
+def new_user():
+    return render_template("users/new.html")
+
+
+@pages_bp.get("/users/<int:user_id>")
+def user_profile(user_id):
+    return render_template("users/profile.html", user_id=user_id)
+
+
+@pages_bp.get("/users/<int:user_id>/library")
+def user_library(user_id):
+    return render_template("users/library.html", user_id=user_id)

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Profile · GameVault{% endblock %}
+
+{% block content %}
+  <div id="alert"></div>
+
+  <div id="profile" class="d-none">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+      <div>
+        <h1 id="profile-name" class="mb-1"></h1>
+        <p id="profile-joined" class="text-muted mb-0"></p>
+      </div>
+      <a class="btn btn-primary" href="/users/{{ user_id }}/library">View library</a>
+    </div>
+
+    <div class="row">
+      <div class="col-md-8 col-lg-6">
+        <h2 class="h5 mb-3">Edit profile</h2>
+        <form id="profile-form" class="card card-body">
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input id="username" name="username" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input id="email" name="email" type="email" class="form-control" required>
+          </div>
+          <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            <button type="button" id="delete-user" class="btn btn-outline-danger">Delete account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const userId = {{ user_id }};
+  const alertBox = document.getElementById("alert");
+  const form = document.getElementById("profile-form");
+
+  function render(user) {
+    document.title = `${user.username} · GameVault`;
+    document.getElementById("profile-name").textContent = user.username;
+    document.getElementById("profile-joined").textContent = `Joined ${formatDate(user.created_at)}`;
+    form.elements.username.value = user.username;
+    form.elements.email.value = user.email;
+    document.getElementById("profile").classList.remove("d-none");
+  }
+
+  api("GET", `/api/users/${userId}`)
+    .then(render)
+    .catch((error) => showAlert(alertBox, error.message));
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    try {
+      const user = await api("PATCH", `/api/users/${userId}`, {
+        username: form.elements.username.value,
+        email: form.elements.email.value,
+      });
+      render(user);
+      showAlert(alertBox, "Profile updated.", "success");
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+  });
+
+  document.getElementById("delete-user").addEventListener("click", async () => {
+    if (!confirm("Delete this account? Their library will be deleted too.")) {
+      return;
+    }
+    try {
+      await api("DELETE", `/api/users/${userId}`);
+      window.location = "/users";
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+  });
+</script>
+{% endblock %}

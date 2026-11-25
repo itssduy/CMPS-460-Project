@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Library · GameVault{% endblock %}
+
+{% block content %}
+  <div id="alert"></div>
+
+  <div id="library-page" class="d-none">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h1 id="library-title" class="mb-0"></h1>
+      <a id="profile-link" class="btn btn-outline-secondary" href="/users/{{ user_id }}">Profile</a>
+    </div>
+
+    <div class="table-responsive mb-5">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Publisher</th>
+            <th>Price</th>
+            <th>Added</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="library"></tbody>
+      </table>
+    </div>
+
+    <h2 class="h4">Recommended for you</h2>
+    <p class="text-muted">Games that share tags with ones in this library.</p>
+    <div id="recommendations" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const userId = {{ user_id }};
+  const alertBox = document.getElementById("alert");
+  const libraryRows = document.getElementById("library");
+  const recommendationCards = document.getElementById("recommendations");
+
+  function renderLibrary(games) {
+    if (games.length === 0) {
+      libraryRows.innerHTML = '<tr><td colspan="5" class="text-muted">No games in this library yet.</td></tr>';
+      return;
+    }
+
+    libraryRows.innerHTML = games.map((game) => `
+      <tr>
+        <td>${escapeHtml(game.title)}</td>
+        <td>${escapeHtml(game.publisher)}</td>
+        <td>${formatPrice(game.price)}</td>
+        <td>${formatDate(game.added_at)}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-danger" data-remove="${game.game_id}">Remove</button>
+        </td>
+      </tr>`).join("");
+  }
+
+  function renderRecommendations(games) {
+    if (games.length === 0) {
+      recommendationCards.innerHTML = '<p class="text-muted">Add some games to get recommendations.</p>';
+      return;
+    }
+
+    recommendationCards.innerHTML = games.map((game) => `
+      <div class="col">
+        <div class="card h-100 game-card">
+          <div class="card-body d-flex flex-column">
+            <h3 class="h6 card-title mb-1">${escapeHtml(game.title)}</h3>
+            <p class="text-muted small mb-2">${escapeHtml(game.publisher)} · ${formatPrice(game.price)}</p>
+            <div class="mb-3">
+              ${game.shared_tags.map((tag) => `<span class="badge text-bg-secondary me-1">${escapeHtml(tag)}</span>`).join("")}
+            </div>
+            <button class="btn btn-sm btn-primary mt-auto" data-add="${game.game_id}">Add to library</button>
+          </div>
+        </div>
+      </div>`).join("");
+  }
+
+  async function load() {
+    const [library, recommendations] = await Promise.all([
+      api("GET", `/api/users/${userId}/library`),
+      api("GET", `/api/users/${userId}/recommendations?limit=6`),
+    ]);
+    renderLibrary(library);
+    renderRecommendations(recommendations);
+  }
+
+  api("GET", `/api/users/${userId}`)
+    .then((user) => {
+      document.title = `${user.username}'s Library · GameVault`;
+      document.getElementById("library-title").textContent = `${user.username}'s Library`;
+      document.getElementById("library-page").classList.remove("d-none");
+      return load();
+    })
+    .catch((error) => showAlert(alertBox, error.message));
+
+  document.addEventListener("click", async (event) => {
+    const removeId = event.target.dataset.remove;
+    const addId = event.target.dataset.add;
+    if (!removeId && !addId) {
+      return;
+    }
+
+    event.target.disabled = true;
+    try {
+      if (removeId) {
+        await api("DELETE", `/api/users/${userId}/library/${removeId}`);
+      } else {
+        await api("POST", `/api/users/${userId}/library`, { game_id: Number(addId) });
+      }
+      await load();
+    } catch (error) {
+      showAlert(alertBox, error.message);
+      event.target.disabled = false;
+    }
+  });
+</script>
+{% endblock %}
