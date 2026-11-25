@@ -66,7 +66,7 @@
 
   function renderRecommendations(games) {
     if (games.length === 0) {
-      recommendationCards.innerHTML = '<p class="text-muted">Add some games to get recommendations.</p>';
+      recommendationCards.innerHTML = '<p class="text-muted">No recommendations yet. They come from games in the catalog that this user doesn\'t own, so they show up as more people import their libraries.</p>';
       return;
     }
 
