@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from gamevault.auth import api_admin_required
 from gamevault.db import get_db
 
 reports_bp = Blueprint("reports", __name__)
@@ -47,21 +48,25 @@ def run(sql, params=()):
 
 
 @reports_bp.get("/reports/games-per-tag")
+@api_admin_required
 def games_per_tag():
     return jsonify(run(GAMES_PER_TAG_SQL))
 
 
 @reports_bp.get("/reports/most-owned")
+@api_admin_required
 def most_owned():
     return jsonify(run(MOST_OWNED_SQL))
 
 
 @reports_bp.get("/reports/publishers")
+@api_admin_required
 def publishers():
     return jsonify(run(PUBLISHERS_SQL))
 
 
 @reports_bp.get("/reports/publisher-owners")
+@api_admin_required
 def publisher_owners():
     publisher = request.args.get("publisher", "").strip()
     if not publisher:

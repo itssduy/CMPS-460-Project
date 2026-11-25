@@ -51,6 +51,7 @@ def edit_game(game_id):
 
 
 @pages_bp.get("/reports")
+@page_admin_required
 def reports():
     return render_template("reports.html", sql=report_queries)
 
