@@ -45,12 +45,8 @@
           <div id="platforms"></div>
         </div>
         <div class="mb-1">
-          <label for="image_file" class="form-label">Image <span class="text-muted">(optional)</span></label>
-          <div class="d-flex gap-2">
-            <input id="image_file" name="image_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control">
-            <button type="button" id="clear-image" class="btn btn-outline-secondary">Remove</button>
-          </div>
-          <div class="form-text">JPG, PNG, WebP, or GIF up to 5 MB.</div>
+          <label for="image_url" class="form-label">Image URL <span class="text-muted">(optional)</span></label>
+          <input id="image_url" name="image_url" class="form-control" placeholder="https://...">
         </div>
       </div>
     </div>
@@ -76,26 +72,10 @@
   const alertBox = document.getElementById("alert");
   const fields = form.elements;
 
-  let previewUrl = null;
-  let currentImage = null;
-  let removeImage = false;
-
-  function selectedFile() {
-    return fields.image_file.files[0] || null;
-  }
-
   function updatePreview() {
     const title = fields.title.value.trim() || "Game title";
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      previewUrl = null;
-    }
-    const file = selectedFile();
-    if (file) {
-      previewUrl = URL.createObjectURL(file);
-    }
     document.getElementById("preview-image").innerHTML =
-      gameImage({ title, image_url: previewUrl || (removeImage ? null : currentImage) }, "game-cover");
+      gameImage({ title, image_url: fields.image_url.value.trim() }, "game-cover");
     document.getElementById("preview-title").textContent = title;
     document.getElementById("preview-publisher").textContent = fields.publisher.value.trim() || "Publisher";
   }
@@ -113,7 +93,7 @@
       for (const name of ["title", "developer", "publisher", "release_date", "price"]) {
         fields[name].value = game[name];
       }
-      currentImage = game.image_url;
+      fields.image_url.value = game.image_url || "";
       for (const checkbox of form.querySelectorAll('[name="platform"]')) {
         const label = form.querySelector(`label[for="${checkbox.id}"]`).textContent;
         checkbox.checked = game.platforms.includes(label);
@@ -124,26 +104,6 @@
   }
 
   form.addEventListener("input", updatePreview);
-  fields.image_file.addEventListener("change", () => {
-    removeImage = false;
-    updatePreview();
-  });
-  document.getElementById("clear-image").addEventListener("click", () => {
-    fields.image_file.value = "";
-    removeImage = true;
-    updatePreview();
-  });
-
-  async function uploadImage(id, file) {
-    const data = new FormData();
-    data.append("image", file);
-    const response = await fetch(`/api/games/${id}/image`, { method: "POST", body: data });
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || "Upload failed");
-    }
-  }
-
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const button = form.querySelector('button[type="submit"]');
@@ -155,11 +115,8 @@
       publisher: fields.publisher.value,
       release_date: fields.release_date.value,
       price: Number(fields.price.value),
+      image_url: fields.image_url.value,
     };
-    const file = selectedFile();
-    if (removeImage && !file) {
-      body.image_url = "";
-    }
     const platformIds = [...form.querySelectorAll('[name="platform"]:checked')]
       .map((checkbox) => Number(checkbox.value));
 
@@ -168,9 +125,6 @@
         ? await api("PATCH", `/api/games/${gameId}`, body)
         : await api("POST", "/api/games", body);
       await api("PUT", `/api/games/${game.game_id}/platforms`, { platform_ids: platformIds });
-      if (file) {
-        await uploadImage(game.game_id, file);
-      }
       window.location = `/games/${game.game_id}`;
     } catch (error) {
       showAlert(alertBox, error.message);
