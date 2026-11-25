@@ -20,7 +20,7 @@ CREATE TABLE games (
 CREATE TABLE users (
     user_id       INTEGER PRIMARY KEY AUTOINCREMENT,
     username      TEXT    NOT NULL UNIQUE,
-    email         TEXT    NOT NULL UNIQUE,
+    email         TEXT    UNIQUE,
     password_hash TEXT    NOT NULL,
     is_admin      INTEGER NOT NULL DEFAULT 0 CHECK (is_admin IN (0, 1)),
     steam_id      TEXT    UNIQUE,

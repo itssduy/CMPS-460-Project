@@ -13,15 +13,25 @@ users_bp = Blueprint("users", __name__)
 USER_FIELDS = ["username", "email"]
 
 
-def validate_user_fields(data, fields):
-    for field in fields:
-        if not isinstance(data[field], str) or not data[field].strip():
-            return f"{field} must be a non-empty string"
+def clean_user_fields(data, fields):
+    values = {}
 
-    if "email" in fields and "@" not in data["email"]:
-        return "email must be a valid email address"
+    if "username" in fields:
+        username = data["username"]
+        if not isinstance(username, str) or not username.strip():
+            return None, "username must be a non-empty string"
+        values["username"] = username.strip()
 
-    return None
+    if "email" in fields:
+        email = data["email"]
+        if email is not None and not isinstance(email, str):
+            return None, "email must be a string"
+        email = (email or "").strip() or None
+        if email is not None and "@" not in email:
+            return None, "email must be a valid email address"
+        values["email"] = email
+
+    return values, None
 
 
 def validate_password(password):
@@ -50,14 +60,15 @@ def create_user():
     if not isinstance(data, dict):
         return jsonify({"error": "Request body must be JSON"}), 400
 
-    missing_fields = [field for field in USER_FIELDS + ["password"] if field not in data]
+    missing_fields = [field for field in ["username", "password"] if field not in data]
     if missing_fields:
         return jsonify({
             "error": "Missing required fields",
             "fields": missing_fields,
         }), 400
 
-    error = validate_user_fields(data, USER_FIELDS) or validate_password(data["password"])
+    values, error = clean_user_fields({"email": None, **data}, USER_FIELDS)
+    error = error or validate_password(data["password"])
     if error:
         return jsonify({"error": error}), 400
 
@@ -65,7 +76,7 @@ def create_user():
     try:
         cursor = connection.execute(
             "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-            (data["username"].strip(), data["email"].strip(), generate_password_hash(data["password"])),
+            (values["username"], values["email"], generate_password_hash(data["password"])),
         )
         connection.commit()
         user = find_user(connection, cursor.lastrowid)
@@ -125,14 +136,14 @@ def update_user(user_id):
             "fields": USER_FIELDS + ["password"],
         }), 400
 
-    error = validate_user_fields(data, fields)
+    cleaned, error = clean_user_fields(data, fields)
     if not error and password is not None:
         error = validate_password(password)
     if error:
         return jsonify({"error": error}), 400
 
-    assignments = [f"{field} = ?" for field in fields]
-    values = [data[field].strip() for field in fields]
+    assignments = [f"{field} = ?" for field in cleaned]
+    values = list(cleaned.values())
     if password is not None:
         assignments.append("password_hash = ?")
         values.append(generate_password_hash(password))

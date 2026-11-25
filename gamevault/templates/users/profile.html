@@ -23,8 +23,8 @@
             <input id="username" name="username" class="form-control" required>
           </div>
           <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input id="email" name="email" type="email" class="form-control" required>
+            <label for="email" class="form-label">Email <span class="text-muted">(optional)</span></label>
+            <input id="email" name="email" type="email" class="form-control">
           </div>
           <div class="mb-3">
             <label for="password" class="form-label">New password <span class="text-muted">(optional)</span></label>
@@ -69,7 +69,7 @@
     document.getElementById("profile-name").textContent = user.username;
     document.getElementById("profile-joined").textContent = `Joined ${formatDate(user.created_at)}`;
     form.elements.username.value = user.username;
-    form.elements.email.value = user.email;
+    form.elements.email.value = user.email || "";
     document.getElementById("steam-unlinked").classList.toggle("d-none", Boolean(user.steam_id));
     document.getElementById("steam-linked").classList.toggle("d-none", !user.steam_id);
     if (user.steam_id) {
