@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, jsonify
 
 from gamevault.db import init_db
 from gamevault.routes.catalog import catalog_bp
 from gamevault.routes.games import games_bp
+from gamevault.routes.images import images_bp
 from gamevault.routes.library import library_bp
 from gamevault.routes.pages import pages_bp
 from gamevault.routes.platforms import platforms_bp
@@ -14,11 +15,16 @@ from gamevault.routes.game_tags import game_tags_bp
 
 def create_app():
     app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
-    for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp, catalog_bp, platforms_bp]:
+    for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp, catalog_bp, platforms_bp, images_bp]:
         app.register_blueprint(blueprint, url_prefix="/api")
 
     app.register_blueprint(pages_bp)
     app.cli.add_command(init_db)
+
+    @app.errorhandler(413)
+    def file_too_large(error):
+        return jsonify({"error": "Image must be 5 MB or smaller"}), 413
 
     return app
