@@ -74,3 +74,23 @@ function steamSummary(summary) {
   }
   return message;
 }
+
+function storeUrl(platform, game) {
+  const title = encodeURIComponent(game.title);
+  switch (platform) {
+    case "Steam":
+      return game.steam_app_id
+        ? `https://store.steampowered.com/app/${game.steam_app_id}`
+        : `https://store.steampowered.com/search/?term=${title}`;
+    case "Epic Games Store":
+      return `https://store.epicgames.com/en-US/browse?q=${title}`;
+    case "PlayStation Store":
+      return `https://store.playstation.com/en-us/search/${title}`;
+    case "Xbox Store":
+      return `https://www.xbox.com/en-US/search/results/games?q=${title}`;
+    case "Nintendo eShop":
+      return `https://www.nintendo.com/us/search/#q=${title}`;
+    default:
+      return `https://www.google.com/search?q=${encodeURIComponent(`${game.title} ${platform}`)}`;
+  }
+}
