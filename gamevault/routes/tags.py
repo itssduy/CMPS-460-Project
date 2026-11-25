@@ -1,11 +1,13 @@
 import sqlite3
 from flask import Blueprint, jsonify, request
+from gamevault.auth import api_admin_required
 from gamevault.db import get_db
 
 tags_bp = Blueprint("tags", __name__)
 
 # Create a tag
 @tags_bp.post("/tags")
+@api_admin_required
 def create_tag():
     data = request.get_json(silent=True)
 
@@ -91,6 +93,7 @@ def get_tag(tag_id):
 
 # Update Tags
 @tags_bp.patch("/tags/<int:tag_id>")
+@api_admin_required
 def update_tag(tag_id):
     data = request.get_json(silent=True)
 
@@ -141,6 +144,7 @@ def update_tag(tag_id):
 
 # Delete tag
 @tags_bp.delete("/tags/<int:tag_id>")
+@api_admin_required
 def delete_tag(tag_id):
     connection = get_db()
 

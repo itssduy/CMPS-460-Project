@@ -41,8 +41,10 @@
         </form>
 
         <div class="d-flex flex-wrap gap-2">
-          <a class="btn btn-outline-secondary" href="/games/{{ game_id }}/edit">Edit game</a>
-          <button type="button" id="delete-game" class="btn btn-outline-danger">Delete game</button>
+          {% if current_user and current_user.is_admin %}
+            <a class="btn btn-outline-secondary" href="/games/{{ game_id }}/edit">Edit game</a>
+            <button type="button" id="delete-game" class="btn btn-outline-danger">Delete game</button>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -132,7 +134,7 @@
     }
   });
 
-  document.getElementById("delete-game").addEventListener("click", async () => {
+  document.getElementById("delete-game")?.addEventListener("click", async () => {
     if (!confirm("Delete this game? It will be removed from every library.")) {
       return;
     }

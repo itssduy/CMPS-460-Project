@@ -32,10 +32,10 @@
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="/users/{{ current_user.user_id }}/library">My Library</a></li>
                 <li><a class="dropdown-item" href="/users/{{ current_user.user_id }}">Profile</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="/games/new">Add Game</a></li>
-                <li><a class="dropdown-item" href="/tags">Tags</a></li>
                 {% if current_user.is_admin %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="/games/new">Add Game</a></li>
+                  <li><a class="dropdown-item" href="/tags">Tags</a></li>
                   <li><a class="dropdown-item" href="/users">Users</a></li>
                 {% endif %}
                 <li><hr class="dropdown-divider"></li>

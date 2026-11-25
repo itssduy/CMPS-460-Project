@@ -2,6 +2,7 @@ import uuid
 from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, request
+from gamevault.auth import api_admin_required
 from gamevault.db import get_db
 
 images_bp = Blueprint("images", __name__)
@@ -28,6 +29,7 @@ def upload_dir():
 
 
 @images_bp.post("/games/<int:game_id>/image")
+@api_admin_required
 def upload_game_image(game_id):
     file = request.files.get("image")
     if file is None or not file.filename:

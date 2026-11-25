@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from gamevault.auth import api_admin_required
 from gamevault.db import attach_platforms, get_db
 
 platforms_bp = Blueprint("platforms", __name__)
@@ -18,6 +19,7 @@ def list_platforms():
 
 
 @platforms_bp.put("/games/<int:game_id>/platforms")
+@api_admin_required
 def set_game_platforms(game_id):
     data = request.get_json(silent=True)
 

@@ -2,12 +2,14 @@ from datetime import date
 from math import isfinite
 
 from flask import Blueprint, jsonify, request
+from gamevault.auth import api_admin_required
 from gamevault.db import get_db
 
 games_bp = Blueprint("games", __name__)
 
 # Create a game
 @games_bp.post("/games")
+@api_admin_required
 def create_game():
     data = request.get_json(silent=True)
 
@@ -123,6 +125,7 @@ def get_game(game_id):
 
 # Update games
 @games_bp.patch("/games/<int:game_id>")
+@api_admin_required
 def update_game(game_id):
     data = request.get_json(silent=True)
 
@@ -216,6 +219,7 @@ def update_game(game_id):
 
 # Delete game
 @games_bp.delete("/games/<int:game_id>")
+@api_admin_required
 def delete_game(game_id):
     connection = get_db()
     try:
