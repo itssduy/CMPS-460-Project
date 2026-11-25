@@ -11,7 +11,6 @@ from gamevault.db import get_db
 users_bp = Blueprint("users", __name__)
 
 USER_FIELDS = ["username", "email"]
-MIN_PASSWORD_LENGTH = 8
 
 
 def validate_user_fields(data, fields):
@@ -26,8 +25,8 @@ def validate_user_fields(data, fields):
 
 
 def validate_password(password):
-    if not isinstance(password, str) or len(password) < MIN_PASSWORD_LENGTH:
-        return f"password must be at least {MIN_PASSWORD_LENGTH} characters"
+    if not isinstance(password, str) or not password:
+        return "password must not be empty"
     return None
 
 

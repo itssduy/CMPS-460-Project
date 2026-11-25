@@ -1,5 +1,4 @@
 import os
-import secrets
 import sqlite3
 from pathlib import Path
 
@@ -25,7 +24,7 @@ def init_db():
         connection.executescript((SQL_DIR / "schema.sql").read_text())
         connection.executescript((SQL_DIR / "seed.sql").read_text())
 
-        password = os.environ.get("ADMIN_PASSWORD") or secrets.token_urlsafe(12)
+        password = os.environ.get("ADMIN_PASSWORD") or "pass"
         connection.execute(
             """
             INSERT INTO users (username, email, password_hash, is_admin)
@@ -38,11 +37,6 @@ def init_db():
         connection.close()
 
     click.echo(f"Initialized {DATABASE.name} with seed data")
-    if os.environ.get("ADMIN_PASSWORD"):
-        click.echo("Admin login: admin (password from ADMIN_PASSWORD)")
-    else:
-        click.echo(f"Admin login: admin / {password}")
-        click.echo("Set ADMIN_PASSWORD in .env to choose the admin password.")
 
 
 def attach_platforms(connection, games):
