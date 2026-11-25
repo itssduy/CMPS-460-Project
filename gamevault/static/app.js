@@ -55,3 +55,9 @@ function gameImage(game, className) {
   }
   return `<div class="${className} game-image-placeholder">${escapeHtml(game.title.charAt(0))}</div>`;
 }
+
+function tagBadges(tags) {
+  return tags
+    .map((tag) => `<a href="/?tag=${encodeURIComponent(tag.name)}" class="badge text-bg-secondary text-decoration-none me-1">${escapeHtml(tag.name)}</a>`)
+    .join("");
+}
