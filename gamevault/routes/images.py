@@ -6,8 +6,19 @@ from gamevault.db import get_db
 
 images_bp = Blueprint("images", __name__)
 
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
 UPLOAD_PREFIX = "/static/uploads/"
+
+
+def detect_image_type(header):
+    if header.startswith(b"\xff\xd8\xff"):
+        return "jpg"
+    if header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if header[:6] in (b"GIF87a", b"GIF89a"):
+        return "gif"
+    if header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+        return "webp"
+    return None
 
 
 def upload_dir():
@@ -22,8 +33,9 @@ def upload_game_image(game_id):
     if file is None or not file.filename:
         return jsonify({"error": "Choose an image to upload"}), 400
 
-    extension = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-    if extension not in ALLOWED_EXTENSIONS or not (file.mimetype or "").startswith("image/"):
+    extension = detect_image_type(file.stream.read(12))
+    file.stream.seek(0)
+    if extension is None:
         return jsonify({"error": "Image must be a JPG, PNG, WebP, or GIF"}), 400
 
     connection = get_db()
