@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
 
 from gamevault.auth import page_admin_required, page_user_access_required
+from gamevault.routes import reports as report_queries
 
 pages_bp = Blueprint("pages", __name__)
 
@@ -47,6 +48,11 @@ def new_game():
 @page_admin_required
 def edit_game(game_id):
     return render_template("games/form.html", game_id=game_id)
+
+
+@pages_bp.get("/reports")
+def reports():
+    return render_template("reports.html", sql=report_queries)
 
 
 @pages_bp.get("/players")

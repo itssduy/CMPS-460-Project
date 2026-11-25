@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Reports · GameVault{% endblock %}
+
+{% macro sql_block(query) -%}
+  <details class="mt-3">
+    <summary class="text-muted small">Show SQL</summary>
+    <pre class="bg-body-tertiary rounded p-3 mt-2 mb-0 small"><code>{{ query.strip() }}</code></pre>
+  </details>
+{%- endmacro %}
+
+{% block content %}
+  <h1 class="mb-1">Reports</h1>
+  <p class="text-muted">Summaries of the GameVault catalog and its players.</p>
+
+  <div id="alert"></div>
+
+  <section class="card card-body mb-4" aria-labelledby="tags-title">
+    <h2 id="tags-title" class="h5 mb-1">Games per tag</h2>
+    <p class="text-muted small mb-3">How many games in the catalog carry each tag</p>
+    <div id="tags-report"></div>
+    {{ sql_block(sql.GAMES_PER_TAG_SQL) }}
+  </section>
+
+  <section class="card card-body mb-4" aria-labelledby="owned-title">
+    <h2 id="owned-title" class="h5 mb-1">Most owned games</h2>
+    <p class="text-muted small mb-3">The 10 games found in the most libraries</p>
+    <div id="owned-report"></div>
+    {{ sql_block(sql.MOST_OWNED_SQL) }}
+  </section>
+
+  <section class="card card-body mb-4" aria-labelledby="publisher-title">
+    <h2 id="publisher-title" class="h5 mb-1">Players by publisher</h2>
+    <p class="text-muted small mb-3">Players who own at least one game from a publisher</p>
+    <select id="publisher" class="form-select mb-3" style="max-width: 24rem" aria-label="Publisher"></select>
+    <p id="publisher-summary" class="mb-2"></p>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th class="text-end">Games owned from this publisher</th>
+          </tr>
+        </thead>
+        <tbody id="publisher-report"></tbody>
+      </table>
+    </div>
+    {{ sql_block(sql.PUBLISHER_OWNERS_SQL) }}
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const alertBox = document.getElementById("alert");
+  const publisherSelect = document.getElementById("publisher");
+
+  function barList(rows, { label, value, href, unit }) {
+    if (rows.length === 0) {
+      return '<p class="text-muted mb-0">No data yet.</p>';
+    }
+    const max = Math.max(...rows.map(value));
+    return rows.map((row) => `
+      <a href="${href(row)}" class="tag-bar text-reset text-decoration-none"
+         title="${escapeHtml(label(row))}: ${value(row)} ${unit(value(row))}">
+        <span class="tag-bar-label">${escapeHtml(label(row))}</span>
+        <span class="tag-bar-track"><span class="tag-bar-fill" style="width: ${(value(row) / max) * 100}%"></span></span>
+        <span class="tag-bar-value">${value(row)}</span>
+      </a>`).join("");
+  }
+
+  async function loadPublisherOwners() {
+    const publisher = publisherSelect.value;
+    const rows = document.getElementById("publisher-report");
+    const summary = document.getElementById("publisher-summary");
+    if (!publisher) {
+      summary.textContent = "";
+      rows.innerHTML = '<tr><td colspan="2" class="text-muted">No publishers yet.</td></tr>';
+      return;
+    }
+
+    const owners = await api("GET", `/api/reports/publisher-owners?publisher=${encodeURIComponent(publisher)}`);
+    summary.textContent = `${owners.length} player${owners.length === 1 ? "" : "s"} own${owners.length === 1 ? "s" : ""} at least one ${publisher} game.`;
+    rows.innerHTML = owners.map((owner) => `
+      <tr>
+        <td><a href="/users/${owner.user_id}/library" class="text-reset text-decoration-none">${escapeHtml(owner.username)}</a></td>
+        <td class="text-end">${owner.games_owned}</td>
+      </tr>`).join("") || '<tr><td colspan="2" class="text-muted">Nobody owns a game from this publisher yet.</td></tr>';
+  }
+
+  async function load() {
+    const [tags, owned, publishers] = await Promise.all([
+      api("GET", "/api/reports/games-per-tag"),
+      api("GET", "/api/reports/most-owned"),
+      api("GET", "/api/reports/publishers"),
+    ]);
+
+    document.getElementById("tags-report").innerHTML = barList(tags, {
+      label: (row) => row.name,
+      value: (row) => row.game_count,
+      href: (row) => `/?tag=${encodeURIComponent(row.name)}`,
+      unit: (count) => (count === 1 ? "game" : "games"),
+    });
+
+    document.getElementById("owned-report").innerHTML = barList(owned, {
+      label: (row) => row.title,
+      value: (row) => row.owners,
+      href: (row) => `/games/${row.game_id}`,
+      unit: (count) => (count === 1 ? "owner" : "owners"),
+    });
+
+    publisherSelect.innerHTML = publishers
+      .map((row) => `<option value="${escapeHtml(row.publisher)}">${escapeHtml(row.publisher)} (${row.game_count})</option>`)
+      .join("");
+    await loadPublisherOwners();
+  }
+
+  publisherSelect.addEventListener("change", () => {
+    loadPublisherOwners().catch((error) => showAlert(alertBox, error.message));
+  });
+
+  load().catch((error) => showAlert(alertBox, error.message));
+</script>
+{% endblock %}
