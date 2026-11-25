@@ -1,12 +1,14 @@
 import sqlite3
 
 from flask import Blueprint, jsonify, request
+from gamevault.auth import api_admin_required
 from gamevault.db import get_db
 
 game_tags_bp = Blueprint("game_tags", __name__)
 
 # Attatch a tag to a game
 @game_tags_bp.post("/games/<int:game_id>/tags")
+@api_admin_required
 def add_game_tag(game_id):
     data = request.get_json(silent=True)
 
@@ -46,6 +48,7 @@ def add_game_tag(game_id):
 
 # Delete game tag
 @game_tags_bp.delete("/games/<int:game_id>/tags/<int:tag_id>")
+@api_admin_required
 def delete_game_tag(game_id, tag_id):
     connection = get_db()
     try:

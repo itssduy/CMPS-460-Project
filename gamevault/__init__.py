@@ -1,10 +1,19 @@
-from flask import Flask
+import os
 
+from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from gamevault.auth import auth_bp
 from gamevault.db import init_db
+from gamevault.routes.catalog import catalog_bp
 from gamevault.routes.games import games_bp
 from gamevault.routes.library import library_bp
 from gamevault.routes.pages import pages_bp
+from gamevault.routes.platforms import platforms_bp
+from gamevault.routes.players import players_bp
 from gamevault.routes.recommendations import recommendations_bp
+from gamevault.routes.reports import reports_bp
+from gamevault.routes.steam import steam_bp
 from gamevault.routes.tags import tags_bp
 from gamevault.routes.users import users_bp
 from gamevault.routes.game_tags import game_tags_bp
@@ -12,11 +21,18 @@ from gamevault.routes.game_tags import game_tags_bp
 
 def create_app():
     app = Flask(__name__)
+    app.config["STEAM_API_KEY"] = os.environ.get("STEAM_API_KEY")
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or os.urandom(32)
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SECURE_COOKIES") == "1"
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-    for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp]:
+    for blueprint in [games_bp, users_bp, library_bp, tags_bp, recommendations_bp, game_tags_bp, catalog_bp, platforms_bp, players_bp, reports_bp]:
         app.register_blueprint(blueprint, url_prefix="/api")
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(pages_bp)
+    app.register_blueprint(steam_bp)
     app.cli.add_command(init_db)
 
     return app

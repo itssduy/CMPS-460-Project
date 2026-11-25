@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Log in · GameVault{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <h1 class="mb-3">Log in</h1>
+
+      <div id="alert"></div>
+
+      <form id="login-form" class="card card-body">
+        <div class="mb-3">
+          <label for="username" class="form-label">Username or email</label>
+          <input id="username" name="username" class="form-control" required autocomplete="username">
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input id="password" name="password" type="password" class="form-control" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Log in</button>
+        <p class="form-text mb-0 mt-2">New here? <a href="/users/new">Create an account</a></p>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const form = document.getElementById("login-form");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    try {
+      await api("POST", "/api/login", {
+        username: form.elements.username.value,
+        password: form.elements.password.value,
+      });
+      const next = new URLSearchParams(window.location.search).get("next");
+      window.location = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    } catch (error) {
+      showAlert(document.getElementById("alert"), error.message);
+    }
+  });
+</script>
+{% endblock %}

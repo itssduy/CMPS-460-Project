@@ -8,15 +8,27 @@
   <div id="library-page" class="d-none">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
       <h1 id="library-title" class="mb-0"></h1>
-      <a id="profile-link" class="btn btn-outline-secondary" href="/users/{{ user_id }}">Profile</a>
+      <a id="profile-link" class="btn btn-outline-secondary d-none" href="/users/{{ user_id }}">Profile</a>
     </div>
 
-    <div class="table-responsive mb-5">
+    <section id="top-tags" class="card card-body mb-4 d-none" aria-labelledby="top-tags-title">
+      <h2 id="top-tags-title" class="h5 mb-1">What you play most</h2>
+      <p class="text-muted small mb-3">Tags across the games in this library</p>
+      <div id="top-tags-list"></div>
+    </section>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+      <input type="search" id="library-search" class="form-control w-auto flex-grow-1" style="max-width: 24rem" placeholder="Search this library" aria-label="Search this library">
+      <span id="library-count" class="text-muted small"></span>
+    </div>
+
+    <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead>
           <tr>
             <th>Title</th>
             <th>Publisher</th>
+            <th>Platforms</th>
             <th>Price</th>
             <th>Added</th>
             <th></th>
@@ -25,50 +37,127 @@
         <tbody id="library"></tbody>
       </table>
     </div>
+    <div class="text-center mb-5">
+      <button type="button" id="show-more" class="btn btn-outline-secondary d-none">Show more</button>
+    </div>
 
-    <h2 class="h4">Recommended for you</h2>
-    <p class="text-muted">Games that share tags with ones in this library.</p>
-    <div id="recommendations" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3"></div>
+    <section id="recs-section" class="d-none">
+      <h2 class="h4">Recommended for you</h2>
+      <p class="text-muted">Games that share tags with ones in this library.</p>
+      <div id="recommendations" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3"></div>
+    </section>
   </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
   const userId = {{ user_id }};
+  const canManage = Boolean(currentUser && (currentUser.is_admin || currentUser.user_id === userId));
   const alertBox = document.getElementById("alert");
   const libraryRows = document.getElementById("library");
   const recommendationCards = document.getElementById("recommendations");
 
-  function renderLibrary(games) {
-    if (games.length === 0) {
-      libraryRows.innerHTML = '<tr><td colspan="5" class="text-muted">No games in this library yet.</td></tr>';
+  function renderTopTags(games) {
+    const counts = {};
+    for (const game of games) {
+      for (const tag of game.tags) {
+        if (tag.name !== "Discount") {
+          counts[tag.name] = (counts[tag.name] || 0) + 1;
+        }
+      }
+    }
+
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5);
+    document.getElementById("top-tags").classList.toggle("d-none", top.length === 0);
+    if (top.length === 0) {
       return;
     }
 
-    libraryRows.innerHTML = games.map((game) => `
+    const max = top[0][1];
+    document.getElementById("top-tags-list").innerHTML = top.map(([name, count]) => {
+      const share = Math.round((count / games.length) * 100);
+      return `
+        <a href="/?tag=${encodeURIComponent(name)}" class="tag-bar text-reset text-decoration-none"
+           title="${escapeHtml(name)}: ${count} of ${games.length} games (${share}%)">
+          <span class="tag-bar-label">${escapeHtml(name)}</span>
+          <span class="tag-bar-track"><span class="tag-bar-fill" style="width: ${(count / max) * 100}%"></span></span>
+          <span class="tag-bar-value">${count}</span>
+        </a>`;
+    }).join("");
+  }
+
+  const PAGE_SIZE = 10;
+  const searchInput = document.getElementById("library-search");
+  const showMoreButton = document.getElementById("show-more");
+  let libraryGames = [];
+  let visibleCount = PAGE_SIZE;
+
+  function renderLibrary(games) {
+    libraryGames = games;
+    renderTopTags(games);
+    renderLibraryRows();
+  }
+
+  function renderLibraryRows() {
+    const query = searchInput.value.trim().toLowerCase();
+    const matches = libraryGames.filter((game) =>
+      game.title.toLowerCase().includes(query) || game.publisher.toLowerCase().includes(query));
+    const shown = matches.slice(0, visibleCount);
+
+    showMoreButton.classList.toggle("d-none", matches.length <= shown.length);
+    showMoreButton.textContent = `Show more (${matches.length - shown.length} left)`;
+    document.getElementById("library-count").textContent = libraryGames.length
+      ? `Showing ${shown.length} of ${matches.length} game${matches.length === 1 ? "" : "s"}`
+      : "";
+
+    if (shown.length === 0) {
+      const message = libraryGames.length ? "No games match that search." : "No games in this library yet.";
+      libraryRows.innerHTML = `<tr><td colspan="6" class="text-muted">${message}</td></tr>`;
+      return;
+    }
+
+    libraryRows.innerHTML = shown.map((game) => `
       <tr>
-        <td>${escapeHtml(game.title)}</td>
+        <td>
+          <a href="/games/${game.game_id}" class="d-flex align-items-center gap-3 text-reset text-decoration-none">
+            ${gameImage(game, "game-thumb")}
+            <span>${escapeHtml(game.title)}</span>
+          </a>
+        </td>
         <td>${escapeHtml(game.publisher)}</td>
+        <td>${platformBadges(game.platforms)}</td>
         <td>${formatPrice(game.price)}</td>
         <td>${formatDate(game.added_at)}</td>
         <td class="text-end">
-          <button class="btn btn-sm btn-outline-danger" data-remove="${game.game_id}">Remove</button>
+          ${canManage ? `<button class="btn btn-sm btn-outline-danger" data-remove="${game.game_id}">Remove</button>` : ""}
         </td>
       </tr>`).join("");
   }
 
+  searchInput.addEventListener("input", () => {
+    visibleCount = PAGE_SIZE;
+    renderLibraryRows();
+  });
+
+  showMoreButton.addEventListener("click", () => {
+    visibleCount += PAGE_SIZE;
+    renderLibraryRows();
+  });
+
   function renderRecommendations(games) {
     if (games.length === 0) {
-      recommendationCards.innerHTML = '<p class="text-muted">Add some games to get recommendations.</p>';
+      recommendationCards.innerHTML = '<p class="text-muted">No recommendations yet. They come from games in the catalog that this user doesn\'t own, so they show up as more people import their libraries.</p>';
       return;
     }
 
     recommendationCards.innerHTML = games.map((game) => `
       <div class="col">
-        <div class="card h-100 game-card">
+        <div class="card h-100 game-card overflow-hidden">
+          <a href="/games/${game.game_id}">${gameImage(game, "card-img-top game-cover")}</a>
           <div class="card-body d-flex flex-column">
-            <h3 class="h6 card-title mb-1">${escapeHtml(game.title)}</h3>
+            <h3 class="h6 card-title mb-1"><a href="/games/${game.game_id}" class="text-reset text-decoration-none">${escapeHtml(game.title)}</a></h3>
             <p class="text-muted small mb-2">${escapeHtml(game.publisher)} · ${formatPrice(game.price)}</p>
+            <div class="mb-2">${platformBadges(game.platforms)}</div>
             <div class="mb-3">
               ${game.shared_tags.map((tag) => `<span class="badge text-bg-secondary me-1">${escapeHtml(tag)}</span>`).join("")}
             </div>
@@ -81,16 +170,33 @@
   async function load() {
     const [library, recommendations] = await Promise.all([
       api("GET", `/api/users/${userId}/library`),
-      api("GET", `/api/users/${userId}/recommendations?limit=6`),
+      canManage ? api("GET", `/api/users/${userId}/recommendations?limit=6`) : null,
     ]);
     renderLibrary(library);
-    renderRecommendations(recommendations);
+    if (recommendations) {
+      renderRecommendations(recommendations);
+    }
   }
 
-  api("GET", `/api/users/${userId}`)
+  const steamParams = new URLSearchParams(window.location.search);
+  if (steamParams.has("steam_added_to_library")) {
+    const summary = {};
+    for (const [key, value] of steamParams) {
+      summary[key.replace("steam_", "")] = Number(value);
+    }
+    showAlert(alertBox, steamSummary(summary), "success");
+    history.replaceState(null, "", window.location.pathname);
+  }
+
+  api("GET", `/api/players/${userId}`)
     .then((user) => {
       document.title = `${user.username}'s Library · GameVault`;
       document.getElementById("library-title").textContent = `${user.username}'s Library`;
+      if (currentUser?.user_id !== userId) {
+        document.getElementById("top-tags-title").textContent = `What ${user.username} plays most`;
+      }
+      document.getElementById("profile-link").classList.toggle("d-none", !canManage);
+      document.getElementById("recs-section").classList.toggle("d-none", !canManage);
       document.getElementById("library-page").classList.remove("d-none");
       return load();
     })
