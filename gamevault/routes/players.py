@@ -5,15 +5,7 @@ players_bp = Blueprint("players", __name__)
 
 PLAYER_SELECT = """
     SELECT u.user_id, u.username, u.created_at,
-           (SELECT COUNT(*) FROM library l WHERE l.user_id = u.user_id) AS game_count,
-           (SELECT t.name
-            FROM library l
-            JOIN game_tags gt ON gt.game_id = l.game_id
-            JOIN tags t ON t.tag_id = gt.tag_id
-            WHERE l.user_id = u.user_id AND t.name <> 'Discount'
-            GROUP BY t.tag_id
-            ORDER BY COUNT(*) DESC, t.name
-            LIMIT 1) AS top_tag
+           (SELECT COUNT(*) FROM library l WHERE l.user_id = u.user_id) AS game_count
     FROM users u
 """
 

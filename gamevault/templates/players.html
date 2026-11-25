@@ -38,10 +38,7 @@
               ${currentUser?.user_id === player.user_id ? '<span class="badge text-bg-primary align-middle ms-1">You</span>' : ""}
             </h2>
             <p class="text-muted small mb-2">Joined ${formatDate(player.created_at)}</p>
-            <div class="d-flex justify-content-between align-items-center">
-              <span>${player.game_count} game${player.game_count === 1 ? "" : "s"}</span>
-              ${player.top_tag ? `<span class="badge text-bg-secondary">Mostly ${escapeHtml(player.top_tag)}</span>` : ""}
-            </div>
+            <span>${player.game_count} game${player.game_count === 1 ? "" : "s"}</span>
           </div>
         </div>
       </div>`).join("");
