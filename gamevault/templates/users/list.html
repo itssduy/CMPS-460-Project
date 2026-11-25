@@ -41,7 +41,7 @@
       rows.innerHTML = users.map((user) => `
         <tr>
           <td><a href="/users/${user.user_id}">${escapeHtml(user.username)}</a></td>
-          <td>${escapeHtml(user.email)}</td>
+          <td>${user.email ? escapeHtml(user.email) : '<span class="text-muted">—</span>'}</td>
           <td>${formatDate(user.created_at)}</td>
           <td class="text-end">
             <a class="btn btn-sm btn-outline-secondary" href="/users/${user.user_id}/library">Library</a>

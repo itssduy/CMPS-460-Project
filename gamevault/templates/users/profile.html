@@ -14,8 +14,8 @@
       <a class="btn btn-primary" href="/users/{{ user_id }}/library">View library</a>
     </div>
 
-    <div class="row">
-      <div class="col-md-8 col-lg-6">
+    <div class="row g-4">
+      <div class="col-lg-6">
         <h2 class="h5 mb-3">Edit profile</h2>
         <form id="profile-form" class="card card-body">
           <div class="mb-3">
@@ -23,14 +23,36 @@
             <input id="username" name="username" class="form-control" required>
           </div>
           <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input id="email" name="email" type="email" class="form-control" required>
+            <label for="email" class="form-label">Email <span class="text-muted">(optional)</span></label>
+            <input id="email" name="email" type="email" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">New password <span class="text-muted">(optional)</span></label>
+            <input id="password" name="password" type="password" class="form-control" autocomplete="new-password">
           </div>
           <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary">Save changes</button>
             <button type="button" id="delete-user" class="btn btn-outline-danger">Delete account</button>
           </div>
         </form>
+      </div>
+
+      <div class="col-lg-6">
+        <h2 class="h5 mb-3">Steam</h2>
+        <div class="card card-body">
+          <div id="steam-unlinked" class="d-none">
+            <p class="mb-3">Sign in through Steam to add the games you own to this library.</p>
+            <a class="btn btn-primary" href="/users/{{ user_id }}/steam/login">Sign in through Steam</a>
+            <p class="form-text mb-0 mt-2">Your Steam profile's game details need to be public.</p>
+          </div>
+          <div id="steam-linked" class="d-none">
+            <p class="mb-3">Linked to <a id="steam-profile" target="_blank" rel="noopener"></a></p>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" id="steam-import" class="btn btn-primary">Import games again</button>
+              <button type="button" id="steam-unlink" class="btn btn-outline-secondary">Unlink</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -47,8 +69,21 @@
     document.getElementById("profile-name").textContent = user.username;
     document.getElementById("profile-joined").textContent = `Joined ${formatDate(user.created_at)}`;
     form.elements.username.value = user.username;
-    form.elements.email.value = user.email;
+    form.elements.email.value = user.email || "";
+    document.getElementById("steam-unlinked").classList.toggle("d-none", Boolean(user.steam_id));
+    document.getElementById("steam-linked").classList.toggle("d-none", !user.steam_id);
+    if (user.steam_id) {
+      const link = document.getElementById("steam-profile");
+      link.href = `https://steamcommunity.com/profiles/${user.steam_id}`;
+      link.textContent = `Steam account ${user.steam_id}`;
+    }
     document.getElementById("profile").classList.remove("d-none");
+  }
+
+  const steamError = new URLSearchParams(window.location.search).get("steam_error");
+  if (steamError) {
+    showAlert(alertBox, steamError);
+    history.replaceState(null, "", window.location.pathname);
   }
 
   api("GET", `/api/users/${userId}`)
@@ -61,9 +96,33 @@
       const user = await api("PATCH", `/api/users/${userId}`, {
         username: form.elements.username.value,
         email: form.elements.email.value,
+        password: form.elements.password.value,
       });
+      form.elements.password.value = "";
       render(user);
       showAlert(alertBox, "Profile updated.", "success");
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+  });
+
+  document.getElementById("steam-import").addEventListener("click", async (event) => {
+    event.target.disabled = true;
+    event.target.textContent = "Importing...";
+    try {
+      const summary = await api("POST", `/api/users/${userId}/steam/import`);
+      showAlert(alertBox, steamSummary(summary), "success");
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+    event.target.disabled = false;
+    event.target.textContent = "Import games again";
+  });
+
+  document.getElementById("steam-unlink").addEventListener("click", async () => {
+    try {
+      await api("DELETE", `/api/users/${userId}/steam`);
+      render(await api("GET", `/api/users/${userId}`));
     } catch (error) {
       showAlert(alertBox, error.message);
     }
@@ -75,7 +134,7 @@
     }
     try {
       await api("DELETE", `/api/users/${userId}`);
-      window.location = "/users";
+      window.location = currentUser.user_id === userId ? "/" : "/users";
     } catch (error) {
       showAlert(alertBox, error.message);
     }

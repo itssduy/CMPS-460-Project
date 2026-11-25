@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
-from gamevault.db import get_db
+from gamevault.auth import api_user_access_required
+from gamevault.db import attach_platforms, attach_tags, get_db
 
 library_bp = Blueprint("library", __name__)
 
@@ -20,7 +21,7 @@ def list_library(user_id):
         games = connection.execute(
             """
             SELECT g.game_id, g.title, g.developer, g.publisher,
-                   g.release_date, g.price, l.created_at AS added_at
+                   g.release_date, g.price, g.image_url, l.created_at AS added_at
             FROM library l
             JOIN games g ON g.game_id = l.game_id
             WHERE l.user_id = ?
@@ -28,13 +29,15 @@ def list_library(user_id):
             """,
             (user_id,),
         ).fetchall()
+        games = attach_tags(connection, attach_platforms(connection, games))
     finally:
         connection.close()
 
-    return jsonify([dict(game) for game in games])
+    return jsonify(games)
 
 
 @library_bp.post("/users/<int:user_id>/library")
+@api_user_access_required
 def add_to_library(user_id):
     data = request.get_json(silent=True)
 
@@ -75,6 +78,7 @@ def add_to_library(user_id):
 
 
 @library_bp.delete("/users/<int:user_id>/library/<int:game_id>")
+@api_user_access_required
 def remove_from_library(user_id, game_id):
     connection = get_db()
     try:

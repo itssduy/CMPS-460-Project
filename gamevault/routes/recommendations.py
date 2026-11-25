@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from gamevault.db import get_db
+from gamevault.db import attach_platforms, get_db
 
 recommendations_bp = Blueprint("recommendations", __name__)
 
@@ -29,7 +29,7 @@ def recommend_games(user_id):
                 JOIN owned o ON o.game_id = gt.game_id
             )
             SELECT g.game_id, g.title, g.developer, g.publisher,
-                   g.release_date, g.price,
+                   g.release_date, g.price, g.image_url,
                    COUNT(*) AS shared_tag_count,
                    GROUP_CONCAT(t.name, '|') AS shared_tags
             FROM games g
@@ -44,13 +44,11 @@ def recommend_games(user_id):
             """,
             (user_id, limit),
         ).fetchall()
+        games = attach_platforms(connection, games)
     finally:
         connection.close()
 
-    results = []
     for game in games:
-        game = dict(game)
         game["shared_tags"] = sorted(game["shared_tags"].split("|"))
-        results.append(game)
 
-    return jsonify(results)
+    return jsonify(games)

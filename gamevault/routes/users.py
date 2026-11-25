@@ -1,6 +1,11 @@
 import sqlite3
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request, session
+from werkzeug.security import generate_password_hash
+
+from gamevault.auth import (
+    USER_COLUMNS, api_admin_required, api_user_access_required, log_in, public_user,
+)
 from gamevault.db import get_db
 
 users_bp = Blueprint("users", __name__)
@@ -8,14 +13,30 @@ users_bp = Blueprint("users", __name__)
 USER_FIELDS = ["username", "email"]
 
 
-def validate_user_fields(data, fields):
-    for field in fields:
-        if not isinstance(data[field], str) or not data[field].strip():
-            return f"{field} must be a non-empty string"
+def clean_user_fields(data, fields):
+    values = {}
 
-    if "email" in fields and "@" not in data["email"]:
-        return "email must be a valid email address"
+    if "username" in fields:
+        username = data["username"]
+        if not isinstance(username, str) or not username.strip():
+            return None, "username must be a non-empty string"
+        values["username"] = username.strip()
 
+    if "email" in fields:
+        email = data["email"]
+        if email is not None and not isinstance(email, str):
+            return None, "email must be a string"
+        email = (email or "").strip() or None
+        if email is not None and "@" not in email:
+            return None, "email must be a valid email address"
+        values["email"] = email
+
+    return values, None
+
+
+def validate_password(password):
+    if not isinstance(password, str) or not password:
+        return "password must not be empty"
     return None
 
 
@@ -26,6 +47,12 @@ def unique_field_error(error):
     raise error
 
 
+def find_user(connection, user_id):
+    return public_user(connection.execute(
+        f"SELECT {USER_COLUMNS} FROM users WHERE user_id = ?", (user_id,)
+    ).fetchone())
+
+
 @users_bp.post("/users")
 def create_user():
     data = request.get_json(silent=True)
@@ -33,63 +60,68 @@ def create_user():
     if not isinstance(data, dict):
         return jsonify({"error": "Request body must be JSON"}), 400
 
-    missing_fields = [field for field in USER_FIELDS if field not in data]
+    missing_fields = [field for field in ["username", "password"] if field not in data]
     if missing_fields:
         return jsonify({
             "error": "Missing required fields",
             "fields": missing_fields,
         }), 400
 
-    error = validate_user_fields(data, USER_FIELDS)
+    values, error = clean_user_fields({"email": None, **data}, USER_FIELDS)
+    error = error or validate_password(data["password"])
     if error:
         return jsonify({"error": error}), 400
 
     connection = get_db()
     try:
         cursor = connection.execute(
-            "INSERT INTO users (username, email) VALUES (?, ?)",
-            (data["username"].strip(), data["email"].strip()),
+            "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+            (values["username"], values["email"], generate_password_hash(data["password"])),
         )
         connection.commit()
-        user = connection.execute(
-            "SELECT * FROM users WHERE user_id = ?", (cursor.lastrowid,)
-        ).fetchone()
+        user = find_user(connection, cursor.lastrowid)
     except sqlite3.IntegrityError as e:
         return unique_field_error(e)
     finally:
         connection.close()
 
-    return jsonify(dict(user)), 201
+    if g.user is None:
+        log_in(user["user_id"])
+
+    return jsonify(user), 201
 
 
 @users_bp.get("/users")
+@api_admin_required
 def list_users():
     connection = get_db()
     try:
-        users = connection.execute("SELECT * FROM users ORDER BY user_id").fetchall()
+        users = connection.execute(
+            f"SELECT {USER_COLUMNS} FROM users ORDER BY user_id"
+        ).fetchall()
     finally:
         connection.close()
 
-    return jsonify([dict(user) for user in users])
+    return jsonify([public_user(user) for user in users])
 
 
 @users_bp.get("/users/<int:user_id>")
+@api_user_access_required
 def get_user(user_id):
     connection = get_db()
     try:
-        user = connection.execute(
-            "SELECT * FROM users WHERE user_id = ?", (user_id,)
-        ).fetchone()
+        user = find_user(connection, user_id)
     finally:
         connection.close()
 
     if user is None:
         return jsonify({"error": "User not found"}), 404
 
-    return jsonify(dict(user))
+    return jsonify(user)
 
 
 @users_bp.patch("/users/<int:user_id>")
+@api_user_access_required
 def update_user(user_id):
     data = request.get_json(silent=True)
 
@@ -97,29 +129,33 @@ def update_user(user_id):
         return jsonify({"error": "Request body must be JSON"}), 400
 
     fields = [field for field in USER_FIELDS if field in data]
-    if not fields:
+    password = data.get("password") or None
+    if not fields and password is None:
         return jsonify({
             "error": "Provide at least one field to update",
-            "fields": USER_FIELDS,
+            "fields": USER_FIELDS + ["password"],
         }), 400
 
-    error = validate_user_fields(data, fields)
+    cleaned, error = clean_user_fields(data, fields)
+    if not error and password is not None:
+        error = validate_password(password)
     if error:
         return jsonify({"error": error}), 400
 
-    assignments = ", ".join(f"{field} = ?" for field in fields)
-    values = [data[field].strip() for field in fields]
+    assignments = [f"{field} = ?" for field in cleaned]
+    values = list(cleaned.values())
+    if password is not None:
+        assignments.append("password_hash = ?")
+        values.append(generate_password_hash(password))
 
     connection = get_db()
     try:
         cursor = connection.execute(
-            f"UPDATE users SET {assignments} WHERE user_id = ?",
+            f"UPDATE users SET {', '.join(assignments)} WHERE user_id = ?",
             (*values, user_id),
         )
         connection.commit()
-        user = connection.execute(
-            "SELECT * FROM users WHERE user_id = ?", (user_id,)
-        ).fetchone()
+        user = find_user(connection, user_id)
     except sqlite3.IntegrityError as e:
         return unique_field_error(e)
     finally:
@@ -128,21 +164,26 @@ def update_user(user_id):
     if cursor.rowcount == 0:
         return jsonify({"error": "User not found"}), 404
 
-    return jsonify(dict(user))
+    return jsonify(user)
 
 
 @users_bp.delete("/users/<int:user_id>")
+@api_user_access_required
 def delete_user(user_id):
     connection = get_db()
     try:
-        cursor = connection.execute(
-            "DELETE FROM users WHERE user_id = ?", (user_id,)
-        )
+        user = find_user(connection, user_id)
+        if user is None:
+            return jsonify({"error": "User not found"}), 404
+        if user["is_admin"]:
+            return jsonify({"error": "Admin accounts can't be deleted"}), 403
+
+        connection.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
         connection.commit()
     finally:
         connection.close()
 
-    if cursor.rowcount == 0:
-        return jsonify({"error": "User not found"}), 404
+    if g.user["user_id"] == user_id:
+        session.clear()
 
     return "", 204

@@ -1,0 +1,13 @@
+[Unit]
+Description=GameVault
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/gamevault
+EnvironmentFile=/home/ubuntu/gamevault/.env
+ExecStart=/home/ubuntu/.local/bin/uv run --no-sync gunicorn --workers 2 --bind 127.0.0.1:8000 "gamevault:create_app()"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

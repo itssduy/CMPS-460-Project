@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Game · GameVault{% endblock %}
+
+{% block content %}
+  <div id="alert"></div>
+
+  <div id="game-page" class="d-none">
+    <a href="/" class="d-inline-block mb-3 text-decoration-none">&larr; Back to catalog</a>
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div id="game-image" class="rounded overflow-hidden"></div>
+      </div>
+
+      <div class="col-lg-5">
+        <h1 id="game-title" class="mb-1"></h1>
+        <p id="game-studio" class="text-muted"></p>
+
+        <dl class="row mb-3">
+          <dt class="col-5 text-muted fw-normal">Release date</dt>
+          <dd id="game-release" class="col-7"></dd>
+          <dt class="col-5 text-muted fw-normal">Price</dt>
+          <dd id="game-price" class="col-7 fw-semibold"></dd>
+          <dt class="col-5 text-muted fw-normal">Owned by</dt>
+          <dd id="game-popularity" class="col-7"></dd>
+        </dl>
+
+        <h2 class="h6 text-muted">Get it on</h2>
+        <div id="game-platforms" class="d-flex flex-wrap gap-2 mb-3"></div>
+
+        <h2 class="h6 text-muted">Tags</h2>
+        <div id="game-tags" class="mb-4"></div>
+
+        <form id="library-form" class="card card-body mb-3">
+          <label for="user" class="form-label">Add to a library</label>
+          <div class="input-group">
+            <select id="user" name="user" class="form-select" required></select>
+            <button type="submit" class="btn btn-primary">Add to library</button>
+          </div>
+        </form>
+
+        <div class="d-flex flex-wrap gap-2">
+          {% if current_user and current_user.is_admin %}
+            <a class="btn btn-outline-secondary" href="/games/{{ game_id }}/edit">Edit game</a>
+            <button type="button" id="delete-game" class="btn btn-outline-danger">Delete game</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const gameId = {{ game_id }};
+  const alertBox = document.getElementById("alert");
+  const libraryForm = document.getElementById("library-form");
+
+  function formatReleaseDate(value) {
+    return new Date(value + "T00:00:00").toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+
+  function render(game) {
+    document.title = `${game.title} · GameVault`;
+    document.getElementById("game-image").innerHTML = gameImage(game, "game-cover");
+    document.getElementById("game-title").textContent = game.title;
+    document.getElementById("game-studio").textContent =
+      game.developer === game.publisher ? game.developer : `${game.developer} · Published by ${game.publisher}`;
+    document.getElementById("game-release").textContent = formatReleaseDate(game.release_date);
+    document.getElementById("game-price").textContent = formatPrice(game.price);
+    document.getElementById("game-platforms").innerHTML = game.platforms.map((platform) => `
+      <a href="${escapeHtml(storeUrl(platform, game))}" class="btn btn-sm btn-outline-light" target="_blank" rel="noopener">
+        ${escapeHtml(platform)} &#8599;
+      </a>`).join("") || '<span class="text-muted">No platforms listed</span>';
+    document.getElementById("game-tags").innerHTML =
+      tagBadges(game.tags) || '<span class="text-muted">No tags</span>';
+  }
+
+  const SHOWN_OWNERS = 5;
+
+  async function renderOwners() {
+    const owners = await api("GET", `/api/games/${gameId}/owners`);
+    const links = owners.slice(0, SHOWN_OWNERS)
+      .map((owner) => `<a href="/users/${owner.user_id}/library" class="text-decoration-none">${escapeHtml(owner.username)}</a>`);
+    const extra = owners.length - SHOWN_OWNERS;
+    document.getElementById("game-popularity").innerHTML = owners.length === 0
+      ? '<span class="text-muted">No one yet</span>'
+      : links.join(", ") + (extra > 0 ? ` and ${extra} more` : "");
+  }
+
+  async function load() {
+    const [game, users] = await Promise.all([
+      api("GET", `/api/catalog/${gameId}`),
+      currentUser?.is_admin ? api("GET", "/api/users") : currentUser ? [currentUser] : [],
+    ]);
+    render(game);
+    await renderOwners();
+    if (!currentUser) {
+      libraryForm.innerHTML = '<span><a href="/login">Log in</a> to add this game to your library.</span>';
+    } else if (!currentUser.is_admin) {
+      libraryForm.querySelector("label").textContent = "Add to your library";
+      libraryForm.elements.user.classList.add("d-none");
+    }
+    libraryForm.elements.user?.insertAdjacentHTML("beforeend", users
+      .map((user) => `<option value="${user.user_id}">${escapeHtml(user.username)}</option>`)
+      .join(""));
+    document.getElementById("game-page").classList.remove("d-none");
+  }
+
+  load().catch((error) => showAlert(alertBox, error.message));
+
+  libraryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const select = libraryForm.elements.user;
+    const userId = select.value;
+    const username = select.options[select.selectedIndex].text;
+
+    try {
+      await api("POST", `/api/users/${userId}/library`, { game_id: gameId });
+      render(await api("GET", `/api/catalog/${gameId}`));
+      await renderOwners();
+      alertBox.innerHTML = `
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          Added to <a href="/users/${userId}/library" class="alert-link">${escapeHtml(username)}'s library</a>.
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>`;
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+  });
+
+  document.getElementById("delete-game")?.addEventListener("click", async () => {
+    if (!confirm("Delete this game? It will be removed from every library.")) {
+      return;
+    }
+    try {
+      await api("DELETE", `/api/games/${gameId}`);
+      window.location = "/";
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Edit Game" if game_id else "Add Game" }} · GameVault{% endblock %}
+
+{% block content %}
+  {% if game_id %}
+    <a href="/games/{{ game_id }}" class="d-inline-block mb-3 text-decoration-none">&larr; Back to game</a>
+  {% endif %}
+  <h1 class="mb-3">{{ "Edit Game" if game_id else "Add Game" }}</h1>
+
+  <div id="alert"></div>
+
+  <form id="game-form" class="row g-4">
+    <div class="col-lg-7">
+      <div class="card card-body">
+        <div class="mb-3">
+          <label for="title" class="form-label">Title</label>
+          <input id="title" name="title" class="form-control" required>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="developer" class="form-label">Developer</label>
+            <input id="developer" name="developer" class="form-control" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="publisher" class="form-label">Publisher</label>
+            <input id="publisher" name="publisher" class="form-control" required>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="release_date" class="form-label">Release date</label>
+            <input id="release_date" name="release_date" type="date" class="form-control" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="price" class="form-label">Price</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input id="price" name="price" type="number" min="0" step="0.01" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <span class="form-label d-block">Platforms</span>
+          <div id="platforms"></div>
+        </div>
+        <div class="mb-1">
+          <label for="image_url" class="form-label">Image URL <span class="text-muted">(optional)</span></label>
+          <input id="image_url" name="image_url" class="form-control" placeholder="https://...">
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <p class="text-muted small mb-2">Preview</p>
+      <div class="card overflow-hidden">
+        <div id="preview-image"></div>
+        <div class="card-body">
+          <h2 id="preview-title" class="h6 mb-1"></h2>
+          <p id="preview-publisher" class="text-muted small mb-0"></p>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-3">{{ "Save changes" if game_id else "Add game" }}</button>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const gameId = {{ game_id | tojson }};
+  const form = document.getElementById("game-form");
+  const alertBox = document.getElementById("alert");
+  const fields = form.elements;
+
+  function updatePreview() {
+    const title = fields.title.value.trim() || "Game title";
+    document.getElementById("preview-image").innerHTML =
+      gameImage({ title, image_url: fields.image_url.value.trim() }, "game-cover");
+    document.getElementById("preview-title").textContent = title;
+    document.getElementById("preview-publisher").textContent = fields.publisher.value.trim() || "Publisher";
+  }
+
+  async function init() {
+    const platforms = await api("GET", "/api/platforms");
+    document.getElementById("platforms").innerHTML = platforms.map((platform) => `
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" name="platform" value="${platform.platform_id}" id="platform-${platform.platform_id}">
+        <label class="form-check-label" for="platform-${platform.platform_id}">${escapeHtml(platform.name)}</label>
+      </div>`).join("");
+
+    if (gameId) {
+      const game = await api("GET", `/api/catalog/${gameId}`);
+      for (const name of ["title", "developer", "publisher", "release_date", "price"]) {
+        fields[name].value = game[name];
+      }
+      fields.image_url.value = game.image_url || "";
+      for (const checkbox of form.querySelectorAll('[name="platform"]')) {
+        const label = form.querySelector(`label[for="${checkbox.id}"]`).textContent;
+        checkbox.checked = game.platforms.includes(label);
+      }
+    }
+
+    updatePreview();
+  }
+
+  form.addEventListener("input", updatePreview);
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+
+    const body = {
+      title: fields.title.value,
+      developer: fields.developer.value,
+      publisher: fields.publisher.value,
+      release_date: fields.release_date.value,
+      price: Number(fields.price.value),
+      image_url: fields.image_url.value,
+    };
+    const platformIds = [...form.querySelectorAll('[name="platform"]:checked')]
+      .map((checkbox) => Number(checkbox.value));
+
+    try {
+      const game = gameId
+        ? await api("PATCH", `/api/games/${gameId}`, body)
+        : await api("POST", "/api/games", body);
+      await api("PUT", `/api/games/${game.game_id}/platforms`, { platform_ids: platformIds });
+      window.location = `/games/${game.game_id}`;
+    } catch (error) {
+      showAlert(alertBox, error.message);
+      button.disabled = false;
+    }
+  });
+
+  init().catch((error) => showAlert(alertBox, error.message));
+</script>
+{% endblock %}
