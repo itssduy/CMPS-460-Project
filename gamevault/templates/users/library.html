@@ -11,6 +11,12 @@
       <a id="profile-link" class="btn btn-outline-secondary" href="/users/{{ user_id }}">Profile</a>
     </div>
 
+    <section id="top-tags" class="card card-body mb-4 d-none" aria-labelledby="top-tags-title">
+      <h2 id="top-tags-title" class="h5 mb-1">What you play most</h2>
+      <p class="text-muted small mb-3">Tags across the games in this library</p>
+      <div id="top-tags-list"></div>
+    </section>
+
     <div class="table-responsive mb-5">
       <table class="table table-hover align-middle">
         <thead>
@@ -40,7 +46,37 @@
   const libraryRows = document.getElementById("library");
   const recommendationCards = document.getElementById("recommendations");
 
+  function renderTopTags(games) {
+    const counts = {};
+    for (const game of games) {
+      for (const tag of game.tags) {
+        if (tag.name !== "Discount") {
+          counts[tag.name] = (counts[tag.name] || 0) + 1;
+        }
+      }
+    }
+
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8);
+    document.getElementById("top-tags").classList.toggle("d-none", top.length === 0);
+    if (top.length === 0) {
+      return;
+    }
+
+    const max = top[0][1];
+    document.getElementById("top-tags-list").innerHTML = top.map(([name, count]) => {
+      const share = Math.round((count / games.length) * 100);
+      return `
+        <a href="/?tag=${encodeURIComponent(name)}" class="tag-bar text-reset text-decoration-none"
+           title="${escapeHtml(name)}: ${count} of ${games.length} games (${share}%)">
+          <span class="tag-bar-label">${escapeHtml(name)}</span>
+          <span class="tag-bar-track"><span class="tag-bar-fill" style="width: ${(count / max) * 100}%"></span></span>
+          <span class="tag-bar-value">${count}</span>
+        </a>`;
+    }).join("");
+  }
+
   function renderLibrary(games) {
+    renderTopTags(games);
     if (games.length === 0) {
       libraryRows.innerHTML = '<tr><td colspan="6" class="text-muted">No games in this library yet.</td></tr>';
       return;

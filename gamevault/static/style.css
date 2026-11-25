@@ -29,3 +29,40 @@
   font-size: 1.5rem;
   font-weight: 700;
 }
+
+.tag-bar {
+  display: grid;
+  grid-template-columns: minmax(6rem, 10rem) 1fr 2.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.3rem 0.25rem;
+  border-radius: 4px;
+}
+
+.tag-bar:hover {
+  background: var(--bs-secondary-bg);
+}
+
+.tag-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-bar-track {
+  height: 10px;
+}
+
+.tag-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--bs-primary);
+}
+
+.tag-bar-value {
+  text-align: right;
+  color: var(--bs-secondary-color);
+  font-variant-numeric: tabular-nums;
+}

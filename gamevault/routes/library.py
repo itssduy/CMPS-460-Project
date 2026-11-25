@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from gamevault.auth import api_user_access_required
-from gamevault.db import attach_platforms, get_db
+from gamevault.db import attach_platforms, attach_tags, get_db
 
 library_bp = Blueprint("library", __name__)
 
@@ -29,7 +29,7 @@ def list_library(user_id):
             """,
             (user_id,),
         ).fetchall()
-        games = attach_platforms(connection, games)
+        games = attach_tags(connection, attach_platforms(connection, games))
     finally:
         connection.close()
 
