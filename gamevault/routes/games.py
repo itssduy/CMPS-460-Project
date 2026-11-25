@@ -45,12 +45,18 @@ def create_game():
     if not isfinite(price) or price < 0:
         return jsonify({"error": "price must be a finite number of 0 or more"}), 400
 
+    image_url = data.get("image_url")
+    if image_url is not None and not isinstance(image_url, str):
+        return jsonify({"error": "image_url must be a string"}), 400
+    if image_url is not None:
+        image_url = image_url.strip() or None
+
     connection = get_db()
     try:
         cursor = connection.execute(
             """
-            INSERT INTO games (title, developer, publisher, release_date, price)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO games (title, developer, publisher, release_date, price, image_url)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 data["title"].strip(),
@@ -58,6 +64,7 @@ def create_game():
                 data["publisher"].strip(),
                 data["release_date"],
                 price,
+                image_url,
             ),
         )
         connection.commit()
@@ -72,6 +79,7 @@ def create_game():
         "publisher": data["publisher"].strip(),
         "release_date": data["release_date"],
         "price": price,
+        "image_url": image_url,
     }), 201
 
 # List all games
@@ -121,7 +129,7 @@ def update_game(game_id):
     if not isinstance(data, dict):
         return jsonify({"error": "Request body must be in JSON"}), 400
 
-    allowed_fields = {"title", "developer", "publisher", "release_date", "price"}
+    allowed_fields = {"title", "developer", "publisher", "release_date", "price", "image_url"}
     unknown_fields = set(data) - allowed_fields
 
     if unknown_fields:
@@ -130,7 +138,7 @@ def update_game(game_id):
             "fields": sorted(unknown_fields),
         }), 400
 
-    if not any(value is not None for value in data.values()):
+    if not any(value is not None for value in data.values()) and "image_url" not in data:
         return jsonify({"error": "Provide at least one non-null field to update"}), 400
 
     updates = {}
@@ -160,6 +168,12 @@ def update_game(game_id):
             return jsonify({"error": "price must be a finite number of 0 or more"}), 400
         updates["price"] = price
 
+    image_url = data.get("image_url")
+    if image_url is not None and not isinstance(image_url, str):
+        return jsonify({"error": "image_url must be a string"}), 400
+    if image_url is not None:
+        image_url = image_url.strip() or None
+
     connection = get_db()
     try:
         cursor = connection.execute(
@@ -181,6 +195,11 @@ def update_game(game_id):
                 game_id,
             )
         )
+        if "image_url" in data:
+            connection.execute(
+                "UPDATE games SET image_url = ? WHERE game_id = ?",
+                (image_url, game_id),
+            )
         connection.commit()
 
         if cursor.rowcount == 0:
