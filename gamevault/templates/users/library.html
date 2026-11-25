@@ -96,6 +96,16 @@
     renderRecommendations(recommendations);
   }
 
+  const steamParams = new URLSearchParams(window.location.search);
+  if (steamParams.has("steam_added_to_library")) {
+    const summary = {};
+    for (const [key, value] of steamParams) {
+      summary[key.replace("steam_", "")] = Number(value);
+    }
+    showAlert(alertBox, steamSummary(summary), "success");
+    history.replaceState(null, "", window.location.pathname);
+  }
+
   api("GET", `/api/users/${userId}`)
     .then((user) => {
       document.title = `${user.username}'s Library · GameVault`;

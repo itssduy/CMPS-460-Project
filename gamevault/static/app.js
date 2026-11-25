@@ -61,3 +61,16 @@ function tagBadges(tags) {
     .map((tag) => `<a href="/?tag=${encodeURIComponent(tag.name)}" class="badge text-bg-secondary text-decoration-none me-1">${escapeHtml(tag.name)}</a>`)
     .join("");
 }
+
+function steamSummary(summary) {
+  const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
+  let message = `Imported from Steam: ${plural(summary.added_to_library, "game")} added to the library`;
+  if (summary.new_catalog_games) {
+    message += `, ${plural(summary.new_catalog_games, "new game")} added to the catalog`;
+  }
+  message += ".";
+  if (summary.not_imported_yet) {
+    message += ` ${summary.not_imported_yet} more can be imported by running the import again.`;
+  }
+  return message;
+}

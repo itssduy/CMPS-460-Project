@@ -40,7 +40,8 @@
           </div>
         </form>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
+          <a id="steam-store" class="btn btn-outline-secondary d-none" target="_blank" rel="noopener">View on Steam</a>
           <a class="btn btn-outline-secondary" href="/games/{{ game_id }}/edit">Edit game</a>
           <button type="button" id="delete-game" class="btn btn-outline-danger">Delete game</button>
         </div>
@@ -75,6 +76,9 @@
       `${game.popularity} user${game.popularity === 1 ? "" : "s"}`;
     document.getElementById("game-platforms").innerHTML =
       platformBadges(game.platforms) || '<span class="text-muted">No platforms listed</span>';
+    const steamLink = document.getElementById("steam-store");
+    steamLink.classList.toggle("d-none", !game.steam_app_id);
+    steamLink.href = game.steam_app_id ? `https://store.steampowered.com/app/${game.steam_app_id}` : "";
     document.getElementById("game-tags").innerHTML =
       tagBadges(game.tags) || '<span class="text-muted">No tags</span>';
   }

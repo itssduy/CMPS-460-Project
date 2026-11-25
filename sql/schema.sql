@@ -13,13 +13,15 @@ CREATE TABLE games (
     publisher    TEXT    NOT NULL,
     release_date TEXT    NOT NULL,
     price        REAL    NOT NULL CHECK (price >= 0),
-    image_url    TEXT
+    image_url    TEXT,
+    steam_app_id INTEGER UNIQUE
 );
 
 CREATE TABLE users (
     user_id    INTEGER PRIMARY KEY AUTOINCREMENT,
     username   TEXT NOT NULL UNIQUE,
     email      TEXT NOT NULL UNIQUE,
+    steam_id   TEXT UNIQUE,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
