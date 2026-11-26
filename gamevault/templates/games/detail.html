@@ -40,6 +40,17 @@
           </div>
         </form>
 
+        {% if current_user and current_user.is_admin %}
+          <form id="sale-form" class="card card-body mb-3">
+            <label for="discount" class="form-label">Put on sale</label>
+            <div class="input-group">
+              <input id="discount" name="discount" type="number" min="1" max="100" step="1" class="form-control" placeholder="Discount" required>
+              <span class="input-group-text">% off</span>
+              <button type="submit" class="btn btn-success">Start sale</button>
+            </div>
+          </form>
+        {% endif %}
+
         <div class="d-flex flex-wrap gap-2">
           {% if current_user and current_user.is_admin %}
             <a class="btn btn-outline-secondary" href="/games/{{ game_id }}/edit">Edit game</a>
@@ -72,7 +83,11 @@
     document.getElementById("game-studio").textContent =
       game.developer === game.publisher ? game.developer : `${game.developer} · Published by ${game.publisher}`;
     document.getElementById("game-release").textContent = formatReleaseDate(game.release_date);
-    document.getElementById("game-price").textContent = formatPrice(game.price);
+    document.getElementById("game-price").innerHTML = priceWithSale(game);
+    const saleForm = document.getElementById("sale-form");
+    if (saleForm) {
+      saleForm.classList.toggle("d-none", isOnSale(game));
+    }
     document.getElementById("game-platforms").innerHTML = game.platforms.map((platform) => `
       <a href="${escapeHtml(storeUrl(platform, game))}" class="btn btn-sm btn-outline-light" target="_blank" rel="noopener">
         ${escapeHtml(platform)} &#8599;
@@ -129,6 +144,19 @@
           Added to <a href="/users/${userId}/library" class="alert-link">${escapeHtml(username)}'s library</a>.
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>`;
+    } catch (error) {
+      showAlert(alertBox, error.message);
+    }
+  });
+
+  document.getElementById("sale-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const percent = event.target.elements.discount.value;
+    try {
+      const sale = await api("POST", `/api/games/${gameId}/sale?discount_percent=${encodeURIComponent(percent)}`);
+      render(await api("GET", `/api/catalog/${gameId}`));
+      showAlert(alertBox, `On sale: ${percent}% off, now ${formatPrice(sale.price)}.`, "success");
+      event.target.reset();
     } catch (error) {
       showAlert(alertBox, error.message);
     }

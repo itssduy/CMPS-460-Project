@@ -100,3 +100,12 @@ document.getElementById("logout")?.addEventListener("click", async () => {
   await api("POST", "/api/logout");
   window.location = "/";
 });
+
+function isOnSale(game) {
+  return (game.tags || []).some((tag) => tag.name === "Discount");
+}
+
+function priceWithSale(game) {
+  const badge = isOnSale(game) ? ' <span class="badge text-bg-success align-middle">On sale</span>' : "";
+  return `${formatPrice(game.price)}${badge}`;
+}

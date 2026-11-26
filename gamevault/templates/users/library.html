@@ -126,7 +126,7 @@
         </td>
         <td>${escapeHtml(game.publisher)}</td>
         <td>${platformBadges(game.platforms)}</td>
-        <td>${formatPrice(game.price)}</td>
+        <td>${priceWithSale(game)}</td>
         <td>${formatDate(game.added_at)}</td>
         <td class="text-end">
           ${canManage ? `<button class="btn btn-sm btn-outline-danger" data-remove="${game.game_id}">Remove</button>` : ""}
