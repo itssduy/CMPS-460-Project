@@ -1,4 +1,5 @@
 import sqlite3
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from flask import Blueprint, jsonify, request
 from gamevault.auth import api_admin_required
@@ -123,4 +124,68 @@ def search_by_publisher_and_tag():
         connection.close()
 
     return jsonify([dict(game) for game in games])
-    
+
+ # Put a game on sale with a percentage discount and discount tag
+@game_tags_bp.post("/games/<int:game_id>/sale")
+@api_admin_required
+def put_game_on_sale(game_id):
+    raw_discount = request.args.get("discount_percent")
+    if raw_discount is None:
+        return jsonify({"error": "discount_percent query parameter is required"}), 400
+
+    try:
+        discount_percent = Decimal(raw_discount)
+    except InvalidOperation:
+        return jsonify({"error": "discount_percent must be a number from 0 to 100"}), 400
+
+    if not discount_percent.is_finite() or not Decimal("0") < discount_percent <= Decimal("100"):
+        return jsonify({"error": "discount_percent must be greater than 0 and at most 100"}), 400
+
+    connection = get_db()
+    try:
+        game = connection.execute(
+            "SELECT price FROM games WHERE game_id = ?", (game_id,)
+        ).fetchone()
+        if game is None:
+            return jsonify({"error": "Game not found"}), 404
+
+        discount_tag = connection.execute(
+            "SELECT tag_id FROM tags WHERE name = ? COLLATE NOCASE",
+            ("Discount",),
+        ).fetchone()
+        if discount_tag is None:
+            return jsonify({"error": "Discount tag not found"}), 404
+
+        already_on_sale = connection.execute(
+            "SELECT 1 FROM game_tags WHERE game_id = ? AND tag_id = ?",
+            (game_id, discount_tag["tag_id"]),
+        ).fetchone()
+        if already_on_sale:
+            return jsonify({"error": "Game is already on sale"}), 409
+
+        original_price = Decimal(str(game["price"]))
+        sale_price = (original_price * (Decimal("100") - discount_percent) / Decimal("100"))
+        sale_price = sale_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        try:
+            connection.execute(
+                "INSERT INTO game_tags (game_id, tag_id) VALUES (?, ?)",
+                (game_id, discount_tag["tag_id"]),
+            )
+            connection.execute(
+                "UPDATE games SET price = ? WHERE game_id = ?",
+                (float(sale_price), game_id),
+            )
+            connection.commit()
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "Game is already on sale"}), 409
+    finally:
+        connection.close()
+
+    return jsonify({
+        "game_id": game_id,
+        "tag_id": discount_tag["tag_id"],
+        "sale": True,
+        "discount_percent": float(discount_percent),
+        "price": float(sale_price),
+    }), 201
