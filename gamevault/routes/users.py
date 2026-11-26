@@ -187,3 +187,27 @@ def delete_user(user_id):
         session.clear()
 
     return "", 204
+
+@users_bp.get("/users/by-publisher")
+def find_users_by_publisher():
+    publisher = request.args.get("publisher", "").strip()
+    if not publisher:
+        return jsonify({"error": "publisher query parameter is required"}), 400
+
+    connection = get_db()
+    try:
+        users = connection.execute(
+            """
+            SELECT DISTINCT u.user_id, u.username, u.email, u.created_at
+            FROM users u
+            JOIN library l ON l.user_id = u.user_id
+            JOIN games g ON g.game_id = l.game_id
+            WHERE g.publisher = ? COLLATE NOCASE
+            ORDER BY u.username
+            """,
+            (publisher,),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return jsonify([dict(user) for user in users])
