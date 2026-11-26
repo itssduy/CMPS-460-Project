@@ -56,7 +56,7 @@ def reports():
     return render_template("reports.html", sql=report_queries)
 
 
-@pages_bp.get("/players")
+@pages_bp.get("/community")
 def players():
     return render_template("players.html")
 

@@ -106,6 +106,12 @@ function isOnSale(game) {
 }
 
 function priceWithSale(game) {
-  const badge = isOnSale(game) ? ' <span class="badge text-bg-success align-middle">On sale</span>' : "";
-  return `${formatPrice(game.price)}${badge}`;
+  if (!isOnSale(game)) {
+    return formatPrice(game.price);
+  }
+  if (!game.original_price || game.original_price <= game.price) {
+    return `${formatPrice(game.price)} <span class="badge text-bg-success align-middle">On sale</span>`;
+  }
+  const percent = Math.round((1 - game.price / game.original_price) * 100);
+  return `${formatPrice(game.price)} <s class="text-muted small">${formatPrice(game.original_price)}</s> <span class="badge text-bg-success align-middle">${percent}% off</span>`;
 }

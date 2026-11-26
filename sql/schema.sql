@@ -7,14 +7,15 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS games;
 
 CREATE TABLE games (
-    game_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    title        TEXT    NOT NULL,
-    developer    TEXT    NOT NULL,
-    publisher    TEXT    NOT NULL,
-    release_date TEXT    NOT NULL,
-    price        REAL    NOT NULL CHECK (price >= 0),
-    image_url    TEXT,
-    steam_app_id INTEGER UNIQUE
+    game_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    title          TEXT    NOT NULL,
+    developer      TEXT    NOT NULL,
+    publisher      TEXT    NOT NULL,
+    release_date   TEXT    NOT NULL,
+    price          REAL    NOT NULL CHECK (price >= 0),
+    original_price REAL    CHECK (original_price >= 0),
+    image_url      TEXT,
+    steam_app_id   INTEGER UNIQUE
 );
 
 CREATE TABLE users (

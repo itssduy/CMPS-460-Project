@@ -173,7 +173,7 @@ def put_game_on_sale(game_id):
                 (game_id, discount_tag["tag_id"]),
             )
             connection.execute(
-                "UPDATE games SET price = ? WHERE game_id = ?",
+                "UPDATE games SET original_price = price, price = ? WHERE game_id = ?",
                 (float(sale_price), game_id),
             )
             connection.commit()
