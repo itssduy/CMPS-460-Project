@@ -51,7 +51,8 @@ function platformBadges(platforms) {
 
 function gameImage(game, className) {
   if (game.image_url) {
-    return `<img src="${escapeHtml(game.image_url)}" alt="${escapeHtml(game.title)}" class="${className}" loading="lazy">`;
+    const fit = game.image_url.endsWith("#contain") ? " fit-contain" : "";
+    return `<img src="${escapeHtml(game.image_url)}" alt="${escapeHtml(game.title)}" class="${className}${fit}" loading="lazy">`;
   }
   return `<div class="${className} game-image-placeholder">${escapeHtml(game.title.charAt(0))}</div>`;
 }
