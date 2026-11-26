@@ -189,6 +189,7 @@ def delete_user(user_id):
     return "", 204
 
 @users_bp.get("/users/by-publisher")
+@api_admin_required
 def find_users_by_publisher():
     publisher = request.args.get("publisher", "").strip()
     if not publisher:

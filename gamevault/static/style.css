@@ -66,3 +66,14 @@
   color: var(--bs-secondary-color);
   font-variant-numeric: tabular-nums;
 }
+
+img.game-cover,
+img.game-thumb {
+  object-fit: cover;
+  object-position: center top;
+}
+
+img.fit-contain {
+  object-fit: contain;
+  background: #fff;
+}
