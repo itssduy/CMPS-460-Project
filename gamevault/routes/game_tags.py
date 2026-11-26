@@ -123,4 +123,38 @@ def search_by_publisher_and_tag():
         connection.close()
 
     return jsonify([dict(game) for game in games])
-    
+
+    # Put a game on sale with discount tag
+@game_tags_bp.post("/games/<int:game_id>/sale")
+def put_game_on_sale(game_id):
+    connection = get_db()
+    try:
+        game = connection.execute(
+            "SELECT 1 FROM games WHERE game_id = ?", (game_id,)
+        ).fetchone()
+        if game is None:
+            return jsonify({"error": "Game not found"}), 404
+
+        discount_tag = connection.execute(
+            "SELECT tag_id FROM tags WHERE name = ? COLLATE NOCASE",
+            ("Discount",),
+        ).fetchone()
+        if discount_tag is None:
+            return jsonify({"error": "Discount tag not found"}), 404
+
+        try:
+            connection.execute(
+                "INSERT INTO game_tags (game_id, tag_id) VALUES (?, ?)",
+                (game_id, discount_tag["tag_id"]),
+            )
+            connection.commit()
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "Game is already on sale"}), 409
+    finally:
+        connection.close()
+
+    return jsonify({
+        "game_id": game_id,
+        "tag_id": discount_tag["tag_id"],
+        "sale": True,
+    }), 201
