@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, jsonify, redirect, request, url_for
+from flask import Blueprint, abort, current_app, g, jsonify, redirect, request, url_for
 from gamevault.auth import api_user_access_required, page_user_access_required
 from gamevault.db import get_db
 from gamevault.steam import SteamError, import_library, login_url, verify_login
@@ -19,6 +19,9 @@ def find_user(connection, user_id):
 @steam_bp.get("/users/<int:user_id>/steam/login")
 @page_user_access_required
 def steam_login(user_id):
+    if g.user["user_id"] != user_id:
+        abort(403)
+
     connection = get_db()
     try:
         user = find_user(connection, user_id)
@@ -34,6 +37,9 @@ def steam_login(user_id):
 @steam_bp.get("/users/<int:user_id>/steam/callback")
 @page_user_access_required
 def steam_callback(user_id):
+    if g.user["user_id"] != user_id:
+        abort(403)
+
     def back_to_profile(message):
         return redirect(url_for("pages.user_profile", user_id=user_id, steam_error=message))
 

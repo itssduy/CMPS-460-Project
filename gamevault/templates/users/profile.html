@@ -41,9 +41,13 @@
         <h2 class="h5 mb-3">Steam</h2>
         <div class="card card-body">
           <div id="steam-unlinked" class="d-none">
-            <p class="mb-3">Sign in through Steam to add the games you own to this library.</p>
-            <a class="btn btn-primary" href="/users/{{ user_id }}/steam/login">Sign in through Steam</a>
-            <p class="form-text mb-0 mt-2">Your Steam profile's game details need to be public.</p>
+            {% if current_user and current_user.user_id == user_id %}
+              <p class="mb-3">Sign in through Steam to add the games you own to this library.</p>
+              <a class="btn btn-primary" href="/users/{{ user_id }}/steam/login">Sign in through Steam</a>
+              <p class="form-text mb-0 mt-2">Your Steam profile's game details need to be public.</p>
+            {% else %}
+              <p class="text-muted mb-0">This user hasn't linked a Steam account.</p>
+            {% endif %}
           </div>
           <div id="steam-linked" class="d-none">
             <p class="mb-3">Linked to <a id="steam-profile" target="_blank" rel="noopener"></a></p>
