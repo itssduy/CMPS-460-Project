@@ -3,43 +3,58 @@
 {% block title %}Reports · GameVault{% endblock %}
 
 {% macro sql_block(query) -%}
-  <details class="mt-3">
-    <summary class="text-muted small">Show SQL</summary>
+  <details class="sql-details mt-2">
+    <summary>SQL</summary>
     <pre class="bg-body-tertiary rounded p-3 mt-2 mb-0 small"><code>{{ query.strip() }}</code></pre>
   </details>
 {%- endmacro %}
 
 {% block content %}
   <h1 class="mb-1">Reports</h1>
-  <p class="text-muted">Summaries of the GameVault catalog and its players.</p>
+  <p class="text-muted mb-4">Summaries of the GameVault catalog and its players.</p>
 
   <div id="alert"></div>
 
-  <section class="card card-body mb-4" aria-labelledby="tags-title">
-    <h2 id="tags-title" class="h5 mb-1">Games per tag</h2>
-    <p class="text-muted small mb-3">How many games in the catalog carry each tag</p>
-    <div id="tags-report"></div>
-    {{ sql_block(sql.GAMES_PER_TAG_SQL) }}
-  </section>
+  <div class="row row-cols-2 row-cols-lg-4 g-3 mb-4">
+    <div class="col"><div class="card card-body stat-card"><span class="stat-label">Games</span><span id="stat-games" class="stat-value">–</span></div></div>
+    <div class="col"><div class="card card-body stat-card"><span class="stat-label">Players</span><span id="stat-players" class="stat-value">–</span></div></div>
+    <div class="col"><div class="card card-body stat-card"><span class="stat-label">On sale</span><span id="stat-sale" class="stat-value">–</span></div></div>
+    <div class="col"><div class="card card-body stat-card"><span class="stat-label">Average price</span><span id="stat-price" class="stat-value">–</span></div></div>
+  </div>
 
-  <section class="card card-body mb-4" aria-labelledby="owned-title">
-    <h2 id="owned-title" class="h5 mb-1">Most owned games</h2>
-    <p class="text-muted small mb-3">The 10 games found in the most libraries</p>
-    <div id="owned-report"></div>
-    {{ sql_block(sql.MOST_OWNED_SQL) }}
-  </section>
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <section class="card card-body h-100" aria-labelledby="tags-title">
+        <h2 id="tags-title" class="h6 mb-0">Top tags</h2>
+        <p class="text-muted small mb-3">Number of catalog games carrying each tag</p>
+        <div class="chart-box"><canvas id="tags-chart" aria-label="Bar chart of the ten most used tags"></canvas></div>
+        {{ sql_block(sql.GAMES_PER_TAG_SQL) }}
+      </section>
+    </div>
+    <div class="col-lg-6">
+      <section class="card card-body h-100" aria-labelledby="owned-title">
+        <h2 id="owned-title" class="h6 mb-0">Most owned games</h2>
+        <p class="text-muted small mb-3">Number of player libraries containing each game</p>
+        <div class="chart-box"><canvas id="owned-chart" aria-label="Bar chart of the ten most owned games"></canvas></div>
+        {{ sql_block(sql.MOST_OWNED_SQL) }}
+      </section>
+    </div>
+  </div>
 
-  <section class="card card-body mb-4" aria-labelledby="publisher-title">
-    <h2 id="publisher-title" class="h5 mb-1">Players by publisher</h2>
-    <p class="text-muted small mb-3">Players who own at least one game from a publisher</p>
-    <select id="publisher" class="form-select mb-3" style="max-width: 24rem" aria-label="Publisher"></select>
-    <p id="publisher-summary" class="mb-2"></p>
+  <section class="card card-body" aria-labelledby="publisher-title">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+      <div>
+        <h2 id="publisher-title" class="h6 mb-0">Players by publisher</h2>
+        <p id="publisher-summary" class="text-muted small mb-0">Players who own at least one game from a publisher</p>
+      </div>
+      <select id="publisher" class="form-select form-select-sm w-auto" aria-label="Publisher"></select>
+    </div>
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-sm table-hover align-middle mb-0">
         <thead>
           <tr>
             <th>Player</th>
-            <th class="text-end">Games owned from this publisher</th>
+            <th class="text-end">Games owned</th>
           </tr>
         </thead>
         <tbody id="publisher-report"></tbody>
@@ -50,22 +65,55 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
   const alertBox = document.getElementById("alert");
   const publisherSelect = document.getElementById("publisher");
+  const styles = getComputedStyle(document.documentElement);
+  const textColor = styles.getPropertyValue("--bs-secondary-color").trim() || "#adb5bd";
+  const barColor = styles.getPropertyValue("--bs-primary").trim() || "#0d6efd";
 
-  function barList(rows, { label, value, href, unit }) {
-    if (rows.length === 0) {
-      return '<p class="text-muted mb-0">No data yet.</p>';
-    }
-    const max = Math.max(...rows.map(value));
-    return rows.map((row) => `
-      <a href="${href(row)}" class="tag-bar text-reset text-decoration-none"
-         title="${escapeHtml(label(row))}: ${value(row)} ${unit(value(row))}">
-        <span class="tag-bar-label">${escapeHtml(label(row))}</span>
-        <span class="tag-bar-track"><span class="tag-bar-fill" style="width: ${(value(row) / max) * 100}%"></span></span>
-        <span class="tag-bar-value">${value(row)}</span>
-      </a>`).join("");
+  Chart.defaults.color = textColor;
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+  function shorten(label) {
+    return label.length > 24 ? label.slice(0, 23) + "…" : label;
+  }
+
+  function barChart(canvasId, rows, { label, value, unit, onClick }) {
+    return new Chart(document.getElementById(canvasId), {
+      type: "bar",
+      data: {
+        labels: rows.map(label),
+        datasets: [{
+          data: rows.map(value),
+          backgroundColor: barColor,
+          borderRadius: { topRight: 4, bottomRight: 4 },
+          borderSkipped: false,
+          barThickness: 14,
+        }],
+      },
+      options: {
+        indexAxis: "y",
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.x} ${unit(ctx.parsed.x)}` } },
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "rgba(255, 255, 255, 0.06)" }, border: { display: false } },
+          y: { ticks: { callback(index) { return shorten(this.getLabelForValue(index)); } }, grid: { display: false }, border: { display: false } },
+        },
+        onClick: (event, elements) => {
+          if (elements.length) {
+            onClick(rows[elements[0].index]);
+          }
+        },
+        onHover: (event, elements) => {
+          event.native.target.style.cursor = elements.length ? "pointer" : "default";
+        },
+      },
+    });
   }
 
   async function loadPublisherOwners() {
@@ -73,13 +121,12 @@
     const rows = document.getElementById("publisher-report");
     const summary = document.getElementById("publisher-summary");
     if (!publisher) {
-      summary.textContent = "";
       rows.innerHTML = '<tr><td colspan="2" class="text-muted">No publishers yet.</td></tr>';
       return;
     }
 
     const owners = await api("GET", `/api/reports/publisher-owners?publisher=${encodeURIComponent(publisher)}`);
-    summary.textContent = `${owners.length} player${owners.length === 1 ? "" : "s"} own${owners.length === 1 ? "s" : ""} at least one ${publisher} game.`;
+    summary.textContent = `${owners.length} player${owners.length === 1 ? "" : "s"} own${owners.length === 1 ? "s" : ""} at least one ${publisher} game`;
     rows.innerHTML = owners.map((owner) => `
       <tr>
         <td><a href="/users/${owner.user_id}/library" class="text-reset text-decoration-none">${escapeHtml(owner.username)}</a></td>
@@ -88,27 +135,33 @@
   }
 
   async function load() {
-    const [tags, owned, publishers] = await Promise.all([
+    const [summary, tags, owned, publishers] = await Promise.all([
+      api("GET", "/api/reports/summary"),
       api("GET", "/api/reports/games-per-tag"),
       api("GET", "/api/reports/most-owned"),
       api("GET", "/api/reports/publishers"),
     ]);
 
-    document.getElementById("tags-report").innerHTML = barList(tags, {
+    document.getElementById("stat-games").textContent = summary.games;
+    document.getElementById("stat-players").textContent = summary.players;
+    document.getElementById("stat-sale").textContent = summary.on_sale;
+    document.getElementById("stat-price").textContent = formatPrice(summary.average_price || 0);
+
+    barChart("tags-chart", tags, {
       label: (row) => row.name,
       value: (row) => row.game_count,
-      href: (row) => `/?tag=${encodeURIComponent(row.name)}`,
       unit: (count) => (count === 1 ? "game" : "games"),
+      onClick: (row) => { window.location = `/?tag=${encodeURIComponent(row.name)}`; },
     });
-
-    document.getElementById("owned-report").innerHTML = barList(owned, {
+    barChart("owned-chart", owned, {
       label: (row) => row.title,
       value: (row) => row.owners,
-      href: (row) => `/games/${row.game_id}`,
-      unit: (count) => (count === 1 ? "owner" : "owners"),
+      unit: (count) => (count === 1 ? "library" : "libraries"),
+      onClick: (row) => { window.location = `/games/${row.game_id}`; },
     });
 
-    publisherSelect.innerHTML = publishers
+    const byCount = [...publishers].sort((a, b) => b.game_count - a.game_count || a.publisher.localeCompare(b.publisher));
+    publisherSelect.innerHTML = byCount
       .map((row) => `<option value="${escapeHtml(row.publisher)}">${escapeHtml(row.publisher)} (${row.game_count})</option>`)
       .join("");
     await loadPublisherOwners();

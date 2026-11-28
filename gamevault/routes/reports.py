@@ -4,12 +4,22 @@ from gamevault.db import get_db
 
 reports_bp = Blueprint("reports", __name__)
 
+SUMMARY_SQL = """
+SELECT (SELECT COUNT(*) FROM games) AS games,
+       (SELECT COUNT(*) FROM users WHERE is_admin = 0) AS players,
+       (SELECT COUNT(*) FROM game_tags gt
+          JOIN tags t ON t.tag_id = gt.tag_id
+         WHERE t.name = 'Discount') AS on_sale,
+       (SELECT ROUND(AVG(price), 2) FROM games) AS average_price
+"""
+
 GAMES_PER_TAG_SQL = """
 SELECT t.tag_id, t.name, COUNT(gt.game_id) AS game_count
 FROM tags t
 JOIN game_tags gt ON gt.tag_id = t.tag_id
 GROUP BY t.tag_id
 ORDER BY game_count DESC, t.name
+LIMIT 10
 """
 
 MOST_OWNED_SQL = """
@@ -45,6 +55,12 @@ def run(sql, params=()):
         return [dict(row) for row in connection.execute(sql, params).fetchall()]
     finally:
         connection.close()
+
+
+@reports_bp.get("/reports/summary")
+@api_admin_required
+def summary():
+    return jsonify(run(SUMMARY_SQL)[0])
 
 
 @reports_bp.get("/reports/games-per-tag")

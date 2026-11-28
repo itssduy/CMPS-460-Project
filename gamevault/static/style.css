@@ -77,3 +77,31 @@ img.fit-contain {
   object-fit: contain;
   background: #fff;
 }
+
+.stat-card {
+  gap: 0.15rem;
+}
+
+.stat-label {
+  color: var(--bs-secondary-color);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-box {
+  position: relative;
+  height: 320px;
+}
+
+.sql-details summary {
+  color: var(--bs-secondary-color);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
