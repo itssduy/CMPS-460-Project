@@ -1,4 +1,3 @@
-import os
 import sqlite3
 from pathlib import Path
 
@@ -24,7 +23,7 @@ def init_db():
         connection.executescript((SQL_DIR / "schema.sql").read_text())
         connection.executescript((SQL_DIR / "seed.sql").read_text())
 
-        password = os.environ.get("ADMIN_PASSWORD") or "pass"
+        password = "password"
         connection.execute(
             """
             INSERT INTO users (username, password_hash, is_admin)
